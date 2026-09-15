@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using TradeLens.Api.Contracts.Transactions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
@@ -6,6 +7,7 @@ using TradeLens.Application.Transactions.Commands.AddTransaction;
 namespace TradeLens.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/transactions")]
 public sealed class TransactionsController : ControllerBase
 {
