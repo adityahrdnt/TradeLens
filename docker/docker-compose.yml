@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tradelens-postgres
+    environment:
+      POSTGRES_DB: tradelens
+      POSTGRES_USER: tradelens
+      POSTGRES_PASSWORD: tradelens
+    ports:
+      - "5433:5432"
+    volumes:
+      - tradelens-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  tradelens-postgres-data:

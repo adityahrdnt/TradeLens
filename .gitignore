@@ -1,0 +1,78 @@
+# =========================
+# .NET / Visual Studio
+# =========================
+
+bin/
+obj/
+.vs/
+.vscode/
+
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test results
+TestResults/
+*.trx
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Build output
+[Bb]uild/
+[Bb]uilds/
+[Dd]ebug/
+[Rr]elease/
+
+
+# =========================
+# Rider / JetBrains
+# =========================
+
+.idea/
+*.sln.iml
+
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Local configuration
+# =========================
+
+appsettings.Development.json
+appsettings.Local.json
+
+.env
+.env.*
+!.env.example
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+logs/
+
+
+# =========================
+# Docker
+# =========================
+
+docker-compose.override.yml
+
+
+# =========================
+# Local database / volumes
+# =========================
+
+postgres-data/

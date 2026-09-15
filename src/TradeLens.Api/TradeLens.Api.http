@@ -1,0 +1,6 @@
+@TradeLens.Api_HostAddress = http://localhost:5068
+
+GET {{TradeLens.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
