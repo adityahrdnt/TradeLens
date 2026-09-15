@@ -23,11 +23,83 @@ public sealed class AddTransactionService
         _positionCalculator = positionCalculator;
     }
 
-    //TODO : public async Task<AddTransactionResult> ExecuteAsync(
-    public Task<AddTransactionResult> ExecuteAsync(
+    public async Task<AddTransactionResult> ExecuteAsync(
         AddTransactionCommand command,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var now = DateTimeOffset.UtcNow;
+
+        var transaction = new Transaction(
+            Guid.NewGuid(),
+            command.PortfolioId,
+            command.BrokerAccountId,
+            command.InstrumentId,
+            command.Type,
+            command.Quantity,
+            command.Price,
+            command.Fee,
+            command.TransactionDate,
+            command.Sequence,
+            command.CreatedBy,
+            now);
+
+        var existingTransactions =
+            await _transactionRepository.GetEffectiveTransactionsAsync(
+                command.PortfolioId,
+                command.InstrumentId,
+                cancellationToken);
+
+        var transactions = existingTransactions
+            .Append(transaction)
+            .ToList();
+
+        var calculation = _positionCalculator.Calculate(transactions);
+
+        await _transactionRepository.AddAsync(
+            transaction,
+            cancellationToken);
+
+        var position =
+            await _positionRepository.GetByPortfolioAndInstrumentAsync(
+                command.PortfolioId,
+                command.InstrumentId,
+                cancellationToken);
+
+        if (position is null)
+        {
+            position = Position.Empty(
+                command.PortfolioId,
+                command.InstrumentId,
+                now);
+
+            position.Apply(
+                calculation.Quantity,
+                calculation.CostBasis,
+                calculation.AveragePrice,
+                now);
+
+            await _positionRepository.AddAsync(
+                position,
+                cancellationToken);
+        }
+        else
+        {
+            position.Apply(
+                calculation.Quantity,
+                calculation.CostBasis,
+                calculation.AveragePrice,
+                now);
+
+            _positionRepository.Update(position);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new AddTransactionResult(
+            transaction.Id,
+            position.Id,
+            position.Quantity,
+            position.CostBasis,
+            position.AveragePrice);
     }
 }

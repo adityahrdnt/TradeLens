@@ -208,10 +208,14 @@ Transaction history represents the source of truth. Position is a materialized c
 - Repository foundation
 - Unit of Work
 - Application validation
+- Add Transaction use case
+
+- Unit tests for domain calculations
+
+- Unit tests for Add Transaction use case
 
 ### In Progress
 
-- Add Transaction use case
 - Transaction API
 
 ### Planned
