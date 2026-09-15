@@ -5,6 +5,7 @@ using DomainTransaction = TradeLens.Domain.Entities.Transaction;
 using TradeLens.Domain.Entities;
 using TradeLens.Domain.Enums;
 using TradeLens.Domain.Services;
+using TradeLens.Domain.Exceptions;
 
 namespace TradeLens.Application.Tests.Transaction.Commands.AddTransaction;
 
@@ -186,6 +187,121 @@ public class AddTransactionServiceTests
 
             return Task.FromResult(result);
         }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_BuyThenSell_RecalculatesPositionCorrectly()
+    {
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var unitOfWork = new FakeUnitOfWork();
+
+        var service = new AddTransactionService(
+            transactionRepository,
+            positionRepository,
+            unitOfWork,
+            new PositionCalculator());
+
+        var buyCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Buy,
+            1_000,
+            8_000m,
+            0m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId);
+
+        var sellCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Sell,
+            400,
+            10_000m,
+            10_000m,
+            new DateOnly(2026, 9, 15),
+            2,
+            userId);
+
+        // Act
+        await service.ExecuteAsync(buyCommand);
+        var sellResult = await service.ExecuteAsync(sellCommand);
+
+        // Assert
+        sellResult.PositionQuantity.Should().Be(600);
+        sellResult.PositionCostBasis.Should().Be(4_800_000m);
+        sellResult.PositionAveragePrice.Should().Be(8_000m);
+
+        transactionRepository.Transactions.Should().HaveCount(2);
+        positionRepository.Positions.Should().HaveCount(1);
+        unitOfWork.SaveChangesCallCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenSellExceedsPosition_ThrowsDomainException()
+    {
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var unitOfWork = new FakeUnitOfWork();
+
+        var service = new AddTransactionService(
+            transactionRepository,
+            positionRepository,
+            unitOfWork,
+            new PositionCalculator());
+
+        var buyCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Buy,
+            1_000,
+            8_000m,
+            0m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId);
+
+        var sellCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Sell,
+            1_001,
+            10_000m,
+            10_000m,
+            new DateOnly(2026, 9, 15),
+            2,
+            userId);
+
+        // Act
+        await service.ExecuteAsync(buyCommand);
+
+        var act = async () => await service.ExecuteAsync(sellCommand);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<DomainException>()
+            .WithMessage("Sell quantity cannot exceed current position.");
+
+        transactionRepository.Transactions.Should().HaveCount(1);
+        positionRepository.Positions.Should().HaveCount(1);
+        unitOfWork.SaveChangesCallCount.Should().Be(1);
     }
 
     private sealed class FakePositionRepository : IPositionRepository
