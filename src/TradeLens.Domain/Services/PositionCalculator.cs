@@ -145,8 +145,7 @@ public class PositionCalculator
     {
         if (transaction.Quantity > quantity)
         {
-            throw new DomainException(
-                "Sell quantity cannot exceed current position.");
+            throw new PositionInsufficientQuantityException();
         }
 
         var averagePrice =

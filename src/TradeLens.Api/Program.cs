@@ -5,9 +5,13 @@ using TradeLens.Application.Interfaces;
 using TradeLens.Infrastructure.Repositories;
 using TradeLens.Domain.Services;
 using TradeLens.Api.Services;
+using FluentValidation;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Api.Authentication;
 using System.Text.Json.Serialization;
+using TradeLens.Api.Errors;
+using TradeLens.Application.Validators;
+using TradeLens.Application.Transactions.Queries.GetTransaction;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +31,11 @@ builder.Services
             new JsonStringEnumConverter());
     });
 
+builder.Services.AddValidatorsFromAssemblyContaining<
+    AddTransactionCommandValidator>();
+
 builder.Services.AddScoped<AddTransactionService>();
+builder.Services.AddScoped<GetTransactionService>();
 builder.Services.AddScoped<PositionCalculator>();
 
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
@@ -44,6 +52,8 @@ builder.Services
         _ => { });
 
 builder.Services.AddAuthorization();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<TradeLensExceptionHandler>();
 
 var app = builder.Build();
 
@@ -53,6 +63,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

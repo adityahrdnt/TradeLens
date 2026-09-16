@@ -1,0 +1,31 @@
+namespace TradeLens.Api.Errors;
+
+public static class TradeLensErrorCode
+{
+    public const string ValidationError = "VALIDATION_ERROR";
+
+    public const string InvalidTransaction = "INVALID_TRANSACTION";
+    public const string TransactionNotFound = "TRANSACTION_NOT_FOUND";
+    public const string TransactionConflict = "TRANSACTION_CONFLICT";
+
+    public const string PositionInsufficientQuantity =
+        "POSITION_INSUFFICIENT_QUANTITY";
+
+    public const string PositionConcurrencyConflict =
+        "POSITION_CONCURRENCY_CONFLICT";
+
+    public const string PortfolioNotFound =
+        "PORTFOLIO_NOT_FOUND";
+
+    public const string PortfolioAccessDenied =
+        "PORTFOLIO_ACCESS_DENIED";
+
+    public const string AuthenticationRequired =
+        "AUTHENTICATION_REQUIRED";
+
+    public const string InvalidAuthentication =
+        "INVALID_AUTHENTICATION";
+
+    public const string InternalError =
+        "INTERNAL_ERROR";
+}
