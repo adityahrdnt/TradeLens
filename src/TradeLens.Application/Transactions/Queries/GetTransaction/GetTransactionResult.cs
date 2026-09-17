@@ -13,4 +13,6 @@ public sealed record GetTransactionResult(
     long Sequence,
     string Status,
     Guid CreatedBy,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    Guid? SupersedesTransactionId,
+    string? CorrectionReason);

@@ -1,18 +1,19 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
-using TradeLens.Infrastructure.Persistence;
-using TradeLens.Application.Interfaces;
-using TradeLens.Infrastructure.Repositories;
-using TradeLens.Domain.Services;
-using TradeLens.Api.Services;
-using FluentValidation;
-using TradeLens.Application.Transactions.Commands.AddTransaction;
-using TradeLens.Api.Authentication;
 using System.Text.Json.Serialization;
+using TradeLens.Api.Authentication;
 using TradeLens.Api.Errors;
-using TradeLens.Application.Validators;
+using TradeLens.Api.Services;
+using TradeLens.Application.Interfaces;
+using TradeLens.Application.Transactions.Commands.AddTransaction;
+using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
+using TradeLens.Application.Validators;
+using TradeLens.Domain.Services;
+using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
+using TradeLens.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<
     AddTransactionCommandValidator>();
 
 builder.Services.AddScoped<AddTransactionService>();
+builder.Services.AddScoped<CorrectTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
 builder.Services.AddScoped<PositionCalculator>();
 

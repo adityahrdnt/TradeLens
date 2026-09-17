@@ -15,11 +15,11 @@ public class PositionConfiguration
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.CostBasis)
-            .HasPrecision(18, 4)
+            .HasPrecision(18, 8)
             .IsRequired();
 
         builder.Property(x => x.AveragePrice)
-            .HasPrecision(18, 4)
+            .HasPrecision(18, 8)
             .IsRequired();
 
         builder.Property(x => x.Version)

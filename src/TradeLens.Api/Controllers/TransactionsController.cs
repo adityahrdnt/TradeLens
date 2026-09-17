@@ -1,10 +1,11 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using FluentValidation;
 using TradeLens.Api.Contracts.Transactions;
+using TradeLens.Api.Errors;
 using TradeLens.Application.Interfaces;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
-using TradeLens.Api.Errors;
+using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 
 namespace TradeLens.Api.Controllers;
@@ -15,20 +16,23 @@ namespace TradeLens.Api.Controllers;
 public sealed class TransactionsController : ControllerBase
 {
     private readonly AddTransactionService _addTransactionService;
+    private readonly CorrectTransactionService _correctTransactionService;
+    private readonly GetTransactionService _getTransactionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<AddTransactionCommand> _validator;
-    private readonly GetTransactionService _getTransactionService;
 
     public TransactionsController(
         AddTransactionService addTransactionService,
+        CorrectTransactionService correctTransactionService,
         ICurrentUserService currentUserService,
-        IValidator<AddTransactionCommand> validator,
-        GetTransactionService getTransactionService)
+        GetTransactionService getTransactionService,
+        IValidator<AddTransactionCommand> validator)
     {
         _addTransactionService = addTransactionService;
+        _correctTransactionService = correctTransactionService;
         _currentUserService = currentUserService;
-        _validator = validator;
         _getTransactionService = getTransactionService;
+        _validator = validator;
     }
 
     [HttpPost]
@@ -104,5 +108,36 @@ public sealed class TransactionsController : ControllerBase
             cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/correction")]
+    public async Task<ActionResult<CorrectTransactionResponse>> Correct(
+        Guid id,
+        [FromBody] CorrectTransactionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CorrectTransactionCommand(
+            id,
+            request.Quantity,
+            request.Price,
+            request.Fee,
+            request.TransactionDate,
+            request.Sequence,
+            _currentUserService.UserId,
+            request.Reason);
+
+        var result = await _correctTransactionService.ExecuteAsync(
+            command,
+            cancellationToken);
+
+        var response = new CorrectTransactionResponse(
+            result.OriginalTransactionId,
+            result.CorrectedTransactionId,
+            result.PositionId,
+            result.PositionQuantity,
+            result.PositionCostBasis,
+            result.PositionAveragePrice);
+
+        return Ok(response);
     }
 }

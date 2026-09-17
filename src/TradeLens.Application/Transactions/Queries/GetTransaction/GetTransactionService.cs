@@ -62,6 +62,8 @@ public sealed class GetTransactionService
             transaction.Sequence,
             transaction.Status.ToString(),
             transaction.CreatedBy,
-            transaction.CreatedAt);
+            transaction.CreatedAt,
+            transaction.SupersedesTransactionId,
+            transaction.CorrectionReason);
     }
 }
