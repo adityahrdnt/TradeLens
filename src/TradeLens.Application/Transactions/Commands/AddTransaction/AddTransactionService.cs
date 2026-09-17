@@ -1,3 +1,4 @@
+using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
 using TradeLens.Domain.Services;
@@ -10,23 +11,61 @@ public sealed class AddTransactionService
     private readonly IPositionRepository _positionRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PositionCalculator _positionCalculator;
+    private readonly IIdempotencyRepository _idempotencyRepository;
+    private readonly ITransactionRequestHasher _transactionRequestHasher;
 
     public AddTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
+        IIdempotencyRepository idempotencyRepository,
         IUnitOfWork unitOfWork,
-        PositionCalculator positionCalculator)
+        PositionCalculator positionCalculator,
+    ITransactionRequestHasher transactionRequestHasher)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
+        _idempotencyRepository = idempotencyRepository;
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
+        _transactionRequestHasher = transactionRequestHasher;
     }
 
     public async Task<AddTransactionResult> ExecuteAsync(
         AddTransactionCommand command,
         CancellationToken cancellationToken = default)
     {
+        var requestHash = _transactionRequestHasher.ComputeHash(
+            command.PortfolioId,
+            command.BrokerAccountId,
+            command.InstrumentId,
+            command.Type.ToString(),
+            command.Quantity,
+            command.Price,
+            command.Fee,
+            command.TransactionDate,
+            command.Sequence);
+
+        var existingRecord =
+            await _idempotencyRepository.GetAsync(
+                command.CreatedBy,
+                command.IdempotencyKey,
+                cancellationToken);
+
+        if (existingRecord is not null)
+        {
+            if (existingRecord.RequestHash != requestHash)
+            {
+                throw new IdempotencyConflictException();
+            }
+
+            return new AddTransactionResult(
+                existingRecord.TransactionId,
+                existingRecord.PositionId,
+                existingRecord.PositionQuantity,
+                existingRecord.PositionCostBasis,
+                existingRecord.PositionAveragePrice);
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         var transaction = new Transaction(
@@ -53,7 +92,8 @@ public sealed class AddTransactionService
             .Append(transaction)
             .ToList();
 
-        var calculation = _positionCalculator.Calculate(transactions);
+        var calculation =
+            _positionCalculator.Calculate(transactions);
 
         await _transactionRepository.AddAsync(
             transaction,
@@ -92,6 +132,22 @@ public sealed class AddTransactionService
 
             _positionRepository.Update(position);
         }
+
+        var idempotencyRecord = new IdempotencyRecord(
+            Guid.NewGuid(),
+            command.CreatedBy,
+            command.IdempotencyKey,
+            requestHash,
+            transaction.Id,
+            position.Id,
+            position.Quantity,
+            position.CostBasis,
+            position.AveragePrice,
+            now);
+
+        await _idempotencyRepository.AddAsync(
+            idempotencyRecord,
+            cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

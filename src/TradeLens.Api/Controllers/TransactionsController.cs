@@ -37,9 +37,15 @@ public sealed class TransactionsController : ControllerBase
 
     [HttpPost]
     public async Task<IActionResult> AddTransaction(
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         [FromBody] AddTransactionRequest request,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            throw new IdempotencyKeyRequiredException();
+        }
+
         var command = new AddTransactionCommand(
             request.PortfolioId,
             request.BrokerAccountId,
@@ -50,7 +56,8 @@ public sealed class TransactionsController : ControllerBase
             request.Fee,
             request.TransactionDate,
             request.Sequence,
-            _currentUserService.UserId);
+            _currentUserService.UserId,
+            idempotencyKey ?? string.Empty);
 
         var validationResult =
             await _validator.ValidateAsync(
@@ -59,26 +66,7 @@ public sealed class TransactionsController : ControllerBase
 
         if (!validationResult.IsValid)
         {
-            var errors = validationResult.Errors
-                .GroupBy(x => x.PropertyName)
-                .ToDictionary(
-                    group => char.ToLowerInvariant(group.Key[0]) + group.Key[1..],
-                    group => group
-                        .Select(x => x.ErrorMessage)
-                        .ToArray());
-
-            var problemDetails = new TradeLensProblemDetails
-            {
-                Type = "https://api.tradelens.com/problems/validation",
-                Title = "Validation Failed",
-                Status = StatusCodes.Status400BadRequest,
-                Code = TradeLensErrorCode.ValidationError,
-                Detail = "One or more validation errors occurred.",
-                TraceId = HttpContext.TraceIdentifier,
-                Errors = errors
-            };
-
-            return BadRequest(problemDetails);
+            throw new ValidationException(validationResult.Errors);
         }
 
         var result = await _addTransactionService.ExecuteAsync(
@@ -95,7 +83,7 @@ public sealed class TransactionsController : ControllerBase
         return CreatedAtAction(
             nameof(GetTransaction),
             new { id = result.TransactionId },
-            result);
+            response);
     }
 
     [HttpGet("{id:guid}")]

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using TradeLens.Application.Exceptions;
@@ -58,6 +59,20 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.PortfolioAccessDenied,
                     "Portfolio Access Denied"
                 ),
+
+            IdempotencyKeyRequiredException =>
+                (
+                    StatusCodes.Status400BadRequest,
+                    TradeLensErrorCode.IdempotencyKeyRequired,
+                    "Idempotency Key Required"
+                ),
+
+            IdempotencyConflictException =>
+                (
+                    StatusCodes.Status409Conflict,
+                    TradeLensErrorCode.IdempotencyConflict,
+                    "Idempotency Conflict"
+                ),
             
             DomainException =>
                 (
@@ -73,6 +88,13 @@ public sealed class TradeLensExceptionHandler
                     "Authentication Required"
                 ),
 
+            ValidationException =>
+                (
+                    StatusCodes.Status400BadRequest,
+                    TradeLensErrorCode.ValidationError,
+                    "Validation Error"
+                ),
+
             _ =>
                 (
                     StatusCodes.Status500InternalServerError,
@@ -81,20 +103,35 @@ public sealed class TradeLensExceptionHandler
                 )
         };
 
+        IDictionary<string, string[]>? errors = null;
+
+        if (exception is ValidationException validationException)
+        {
+            errors = validationException.Errors
+                .GroupBy(x => x.PropertyName)
+                .ToDictionary(
+                    group =>
+                        char.ToLowerInvariant(group.Key[0])
+                        + group.Key[1..],
+                    group => group
+                        .Select(x => x.ErrorMessage)
+                        .ToArray());
+        }
+
         httpContext.Response.StatusCode = status;
 
         var problemDetails = new TradeLensProblemDetails
         {
+            Type = $"https://api.tradelens.com/problems/{code.ToLowerInvariant()}",
             Status = status,
             Title = title,
             Code = code,
             Detail = status == StatusCodes.Status500InternalServerError
                 ? "An unexpected error occurred."
                 : exception.Message,
-            TraceId = httpContext.TraceIdentifier
+            TraceId = httpContext.TraceIdentifier,
+            Errors = errors
         };
-
-        problemDetails.Type = $"https://api.tradelens.com/problems/{code.ToLowerInvariant()}";
 
         await _problemDetailsService.WriteAsync(
             new ProblemDetailsContext
