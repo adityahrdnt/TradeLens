@@ -104,4 +104,71 @@ public class Transaction
         CreatedBy = createdBy;
         CreatedAt = createdAt;
     }
+
+    public void Supersede(
+        DateTimeOffset supersededAt,
+        Guid supersededBy,
+        string reason)
+    {
+        if (Status != TransactionStatus.Active)
+            throw new DomainException(
+                "Only an active transaction can be superseded.");
+
+        if (supersededBy == Guid.Empty)
+            throw new DomainException(
+                "SupersededBy is required.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException(
+                "Correction reason is required.");
+
+        Status = TransactionStatus.Superseded;
+        SupersededAt = supersededAt;
+        SupersededBy = supersededBy;
+        CorrectionReason = reason.Trim();
+    }
+
+    public static Transaction CreateCorrection(
+        Guid id,
+        Transaction original,
+        long quantity,
+        decimal price,
+        decimal fee,
+        DateOnly transactionDate,
+        long sequence,
+        Guid createdBy,
+        DateTimeOffset createdAt,
+        string reason)
+    {
+        if (original.Status != TransactionStatus.Active)
+            throw new DomainException(
+                "Only an active transaction can be corrected.");
+
+        if (id == Guid.Empty)
+            throw new DomainException("Transaction id is required.");
+
+        if (createdBy == Guid.Empty)
+            throw new DomainException("CreatedBy is required.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Correction reason is required.");
+
+        return new Transaction(
+            id,
+            original.PortfolioId,
+            original.BrokerAccountId,
+            original.InstrumentId,
+            original.Type,
+            quantity,
+            price,
+            fee,
+            transactionDate,
+            sequence,
+            createdBy,
+            createdAt)
+        {
+            SupersedesTransactionId = original.Id,
+            CorrectionReason = reason.Trim()
+        };
+    }
 }
