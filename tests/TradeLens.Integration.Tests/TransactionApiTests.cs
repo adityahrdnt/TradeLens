@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
 using TradeLens.Api.Contracts.Transactions;
+using TradeLens.Api.Errors;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Domain.Entities;
 using TradeLens.Infrastructure.Persistence;
@@ -165,7 +166,7 @@ public class TransactionsApiTests
     }
 
     [Fact]
-    public async Task PostTransaction_WithInvalidQuantity_ShouldReturnBadRequest()
+    public async Task PostTransaction_WithInvalidQuantity_ShouldReturnValidationError()
     {
         // Arrange
         await using var factory = new CustomWebApplicationFactory();
@@ -192,10 +193,24 @@ public class TransactionsApiTests
             "/api/v1/transactions",
             request);
 
+        var problem = await response.Content
+            .ReadFromJsonAsync<TradeLensProblemDetails>();
+
         // Assert
         Assert.Equal(
             HttpStatusCode.BadRequest,
             response.StatusCode);
+
+        Assert.NotNull(problem);
+
+        Assert.Equal(
+            "VALIDATION_ERROR",
+            problem!.Code);
+
+        Assert.NotNull(problem.Errors);
+
+        Assert.True(
+            problem.Errors!.ContainsKey("quantity"));
     }
 
     [Fact]
@@ -214,10 +229,19 @@ public class TransactionsApiTests
         var response = await client.GetAsync(
             $"/api/v1/transactions/{transactionId}");
 
+        var problem = await response.Content
+            .ReadFromJsonAsync<TradeLensProblemDetails>();
+
         // Assert
         Assert.Equal(
             HttpStatusCode.NotFound,
             response.StatusCode);
+
+        Assert.NotNull(problem);
+
+        Assert.Equal(
+            "TRANSACTION_NOT_FOUND",
+            problem!.Code);
     }
 
     [Fact]
@@ -250,7 +274,6 @@ public class TransactionsApiTests
             await dbContext.SaveChangesAsync();
         }
 
-        // Create transaction through the API
         var request = new
         {
             portfolioId = otherPortfolioId,
@@ -268,7 +291,6 @@ public class TransactionsApiTests
             "/api/v1/transactions",
             request);
 
-        // We only need the transaction ID for the authorization test.
         var result = await postResponse.Content
             .ReadFromJsonAsync<AddTransactionResponse>();
 
@@ -278,9 +300,18 @@ public class TransactionsApiTests
         var response = await client.GetAsync(
             $"/api/v1/transactions/{result!.TransactionId}");
 
+        var problem = await response.Content
+            .ReadFromJsonAsync<TradeLensProblemDetails>();
+
         // Assert
         Assert.Equal(
             HttpStatusCode.Forbidden,
             response.StatusCode);
+
+        Assert.NotNull(problem);
+
+        Assert.Equal(
+            "PORTFOLIO_ACCESS_DENIED",
+            problem!.Code);
     }
 }
