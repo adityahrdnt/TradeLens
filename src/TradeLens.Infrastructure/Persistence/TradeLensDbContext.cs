@@ -19,6 +19,9 @@ public class TradeLensDbContext : DbContext
 
     public DbSet<Position> Positions => Set<Position>();
 
+    public DbSet<IdempotencyRecord> IdempotencyRecords
+    => Set<IdempotencyRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(

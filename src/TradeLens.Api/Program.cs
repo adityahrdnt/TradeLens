@@ -14,6 +14,7 @@ using TradeLens.Domain.Services;
 using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
 using TradeLens.Infrastructure.Repositories;
+using TradeLens.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,8 @@ builder.Services.AddScoped<PositionCalculator>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+builder.Services.AddScoped<IIdempotencyRepository, IdempotencyRepository>();
+builder.Services.AddScoped<ITransactionRequestHasher, TransactionRequestHasher>();
 builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 
 builder.Services.AddHttpContextAccessor();

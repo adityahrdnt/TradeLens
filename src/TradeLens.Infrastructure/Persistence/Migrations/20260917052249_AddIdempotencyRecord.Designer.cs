@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TradeLens.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TradeLens.Infrastructure.Persistence;
 namespace TradeLens.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(TradeLensDbContext))]
-    partial class TradeLensDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917052249_AddIdempotencyRecord")]
+    partial class AddIdempotencyRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,20 +38,6 @@ namespace TradeLens.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<decimal>("PositionAveragePrice")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("numeric(18,8)");
-
-                    b.Property<decimal>("PositionCostBasis")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("numeric(18,8)");
-
-                    b.Property<Guid>("PositionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<long>("PositionQuantity")
-                        .HasColumnType("bigint");
 
                     b.Property<string>("RequestHash")
                         .IsRequired()

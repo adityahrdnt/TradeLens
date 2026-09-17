@@ -37,9 +37,18 @@ public class TransactionsApiTests
         };
 
         // Act - POST
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/transactions",
-            request);
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        httpRequest.Headers.Add(
+            "Idempotency-Key",
+            Guid.NewGuid().ToString());
+
+        var response = await client.SendAsync(httpRequest);
 
         var result = await response.Content
             .ReadFromJsonAsync<AddTransactionResponse>();
@@ -190,9 +199,18 @@ public class TransactionsApiTests
         };
 
         // Act
-        var response = await client.PostAsJsonAsync(
-            "/api/v1/transactions",
-            request);
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        httpRequest.Headers.Add(
+            "Idempotency-Key",
+            Guid.NewGuid().ToString());
+
+        var response = await client.SendAsync(httpRequest);
 
         var problem = await response.Content
             .ReadFromJsonAsync<TradeLensProblemDetails>();
@@ -288,12 +306,25 @@ public class TransactionsApiTests
             sequence = 1
         };
 
-        var postResponse = await client.PostAsJsonAsync(
-            "/api/v1/transactions",
-            request);
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        httpRequest.Headers.Add(
+            "Idempotency-Key",
+            Guid.NewGuid().ToString());
+
+        var postResponse = await client.SendAsync(httpRequest);
 
         var result = await postResponse.Content
             .ReadFromJsonAsync<AddTransactionResponse>();
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            postResponse.StatusCode);
 
         Assert.NotNull(result);
 
@@ -344,9 +375,18 @@ public class TransactionsApiTests
         };
 
         // Create original transaction
-        var postResponse = await client.PostAsJsonAsync(
-            "/api/v1/transactions",
-            originalRequest);
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(originalRequest)
+        };
+
+        httpRequest.Headers.Add(
+            "Idempotency-Key",
+            Guid.NewGuid().ToString());
+
+        var postResponse = await client.SendAsync(httpRequest);
 
         var originalResult = await postResponse.Content
             .ReadFromJsonAsync<AddTransactionResponse>();

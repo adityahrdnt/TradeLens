@@ -12,4 +12,5 @@ public sealed record AddTransactionCommand(
     decimal Fee,
     DateOnly TransactionDate,
     long Sequence,
-    Guid CreatedBy);
+    Guid CreatedBy,
+    string IdempotencyKey);

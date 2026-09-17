@@ -147,6 +147,7 @@ public class AddTransactionCommandValidatorTests
             1_000m,
             new DateOnly(2026, 9, 15),
             1,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            "test-idempotency-key-001");
     }
 }

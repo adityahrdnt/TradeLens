@@ -28,4 +28,10 @@ public static class TradeLensErrorCode
 
     public const string InternalError =
         "INTERNAL_ERROR";
+
+    public const string IdempotencyConflict = 
+        "IDEMPOTENCY_CONFLICT";
+    
+    public const string IdempotencyKeyRequired =
+        "IDEMPOTENCY_KEY_REQUIRED";
 }

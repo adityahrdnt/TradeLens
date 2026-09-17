@@ -1,11 +1,10 @@
 using FluentAssertions;
-using TradeLens.Application.Interfaces;
+using TradeLens.Application.Exceptions;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
-using DomainTransaction = TradeLens.Domain.Entities.Transaction;
-using TradeLens.Domain.Entities;
 using TradeLens.Domain.Enums;
 using TradeLens.Domain.Services;
 using TradeLens.Domain.Exceptions;
+using TradeLens.Application.Tests.Fakes;
 
 namespace TradeLens.Application.Tests.Transaction.Commands.AddTransaction;
 
@@ -22,14 +21,18 @@ public class AddTransactionServiceTests
 
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
         var positionCalculator = new PositionCalculator();
 
         var service = new AddTransactionService(
             transactionRepository,
             positionRepository,
+            idempotencyRepository,
             unitOfWork,
-            positionCalculator);
+            positionCalculator,
+            transactionRequestHasher);
 
         var command = new AddTransactionCommand(
             portfolioId,
@@ -41,7 +44,8 @@ public class AddTransactionServiceTests
             1_000m,
             new DateOnly(2026, 9, 15),
             1,
-            createdBy);
+            createdBy,
+            "test-idempotency-key-001");
 
         // Act
         var result = await service.ExecuteAsync(command);
@@ -90,14 +94,18 @@ public class AddTransactionServiceTests
 
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
         var positionCalculator = new PositionCalculator();
 
         var service = new AddTransactionService(
             transactionRepository,
             positionRepository,
+            idempotencyRepository,
             unitOfWork,
-            positionCalculator);
+            positionCalculator,
+            transactionRequestHasher);
 
         var firstCommand = new AddTransactionCommand(
             portfolioId,
@@ -109,7 +117,8 @@ public class AddTransactionServiceTests
             1_000m,
             new DateOnly(2026, 9, 15),
             1,
-            createdBy);
+            createdBy,
+            "test-idempotency-key-001");
 
         await service.ExecuteAsync(firstCommand);
 
@@ -123,7 +132,8 @@ public class AddTransactionServiceTests
             2_000m,
             new DateOnly(2026, 9, 16),
             2,
-            createdBy);
+            createdBy,
+            "test-idempotency-key-002");
 
         // Act
         var result = await service.ExecuteAsync(secondCommand);
@@ -149,46 +159,6 @@ public class AddTransactionServiceTests
         unitOfWork.SaveChangesCallCount.Should().Be(2);
     }
 
-    private sealed class FakeTransactionRepository : ITransactionRepository
-    {
-        public List<DomainTransaction> Transactions { get; } = [];
-
-        public Task AddAsync(
-            DomainTransaction transaction,
-            CancellationToken cancellationToken = default)
-        {
-            Transactions.Add(transaction);
-            return Task.CompletedTask;
-        }
-
-        public Task<DomainTransaction?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var transaction = Transactions
-                .FirstOrDefault(x => x.Id == id);
-
-            return Task.FromResult(transaction);
-        }
-
-        public Task<IReadOnlyList<DomainTransaction>> GetEffectiveTransactionsAsync(
-            Guid portfolioId,
-            Guid instrumentId,
-            CancellationToken cancellationToken = default)
-        {
-            IReadOnlyList<DomainTransaction> result = Transactions
-                .Where(x =>
-                    x.PortfolioId == portfolioId &&
-                    x.InstrumentId == instrumentId &&
-                    x.Status == TransactionStatus.Active)
-                .OrderBy(x => x.TransactionDate)
-                .ThenBy(x => x.Sequence)
-                .ToList();
-
-            return Task.FromResult(result);
-        }
-    }
-
     [Fact]
     public async Task ExecuteAsync_BuyThenSell_RecalculatesPositionCorrectly()
     {
@@ -201,12 +171,16 @@ public class AddTransactionServiceTests
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
 
         var service = new AddTransactionService(
             transactionRepository,
             positionRepository,
+            idempotencyRepository,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            transactionRequestHasher);
 
         var buyCommand = new AddTransactionCommand(
             portfolioId,
@@ -218,7 +192,8 @@ public class AddTransactionServiceTests
             0m,
             new DateOnly(2026, 9, 15),
             1,
-            userId);
+            userId,
+            "test-idempotency-key-002");
 
         var sellCommand = new AddTransactionCommand(
             portfolioId,
@@ -230,7 +205,8 @@ public class AddTransactionServiceTests
             10_000m,
             new DateOnly(2026, 9, 15),
             2,
-            userId);
+            userId,
+            "test-idempotency-key-004");
 
         // Act
         await service.ExecuteAsync(buyCommand);
@@ -258,12 +234,16 @@ public class AddTransactionServiceTests
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
         var unitOfWork = new FakeUnitOfWork();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
 
         var service = new AddTransactionService(
             transactionRepository,
             positionRepository,
+            idempotencyRepository,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            transactionRequestHasher);
 
         var buyCommand = new AddTransactionCommand(
             portfolioId,
@@ -275,7 +255,8 @@ public class AddTransactionServiceTests
             0m,
             new DateOnly(2026, 9, 15),
             1,
-            userId);
+            userId,
+            "test-idempotency-key-003");
 
         var sellCommand = new AddTransactionCommand(
             portfolioId,
@@ -287,7 +268,8 @@ public class AddTransactionServiceTests
             10_000m,
             new DateOnly(2026, 9, 15),
             2,
-            userId);
+            userId,
+            "test-idempotency-key-005");
 
         // Act
         await service.ExecuteAsync(buyCommand);
@@ -304,45 +286,149 @@ public class AddTransactionServiceTests
         unitOfWork.SaveChangesCallCount.Should().Be(1);
     }
 
-    private sealed class FakePositionRepository : IPositionRepository
+    [Fact]
+    public async Task ExecuteAsync_WhenSameIdempotencyKeyAndSamePayload_ShouldReturnOriginalResult()
     {
-        public List<Position> Positions { get; } = [];
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
-        public Task<Position?> GetByPortfolioAndInstrumentAsync(
-            Guid portfolioId,
-            Guid instrumentId,
-            CancellationToken cancellationToken = default)
-        {
-            var position = Positions.FirstOrDefault(x =>
-                x.PortfolioId == portfolioId &&
-                x.InstrumentId == instrumentId);
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
+        var unitOfWork = new FakeUnitOfWork();
 
-            return Task.FromResult(position);
-        }
+        var service = new AddTransactionService(
+            transactionRepository,
+            positionRepository,
+            idempotencyRepository,
+            unitOfWork,
+            new PositionCalculator(),
+            transactionRequestHasher);
 
-        public Task AddAsync(
-            Position position,
-            CancellationToken cancellationToken = default)
-        {
-            Positions.Add(position);
-            return Task.CompletedTask;
-        }
+        var command = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            1_000m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId,
+            "same-key");
 
-        public void Update(Position position)
-        {
-            // Fake repository keeps the same tracked object.
-        }
+        // Act
+        var firstResult = await service.ExecuteAsync(command);
+        var secondResult = await service.ExecuteAsync(command);
+
+        // Assert
+        secondResult.TransactionId
+            .Should()
+            .Be(firstResult.TransactionId);
+
+        secondResult.PositionId
+            .Should()
+            .Be(firstResult.PositionId);
+
+        secondResult.PositionQuantity
+            .Should()
+            .Be(firstResult.PositionQuantity);
+
+        secondResult.PositionCostBasis
+            .Should()
+            .Be(firstResult.PositionCostBasis);
+
+        secondResult.PositionAveragePrice
+            .Should()
+            .Be(firstResult.PositionAveragePrice);
+
+        transactionRepository.Transactions
+            .Should()
+            .ContainSingle();
+
+        idempotencyRepository.Records
+            .Should()
+            .ContainSingle();
+
+        unitOfWork.SaveChangesCallCount
+            .Should()
+            .Be(1);
     }
 
-    private sealed class FakeUnitOfWork : IUnitOfWork
+    [Fact]
+    public async Task ExecuteAsync_WhenSameIdempotencyKeyWithDifferentPayload_ShouldThrowIdempotencyConflictException()
     {
-        public int SaveChangesCallCount { get; private set; }
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
-        public Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default)
-        {
-            SaveChangesCallCount++;
-            return Task.FromResult(1);
-        }
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
+        var unitOfWork = new FakeUnitOfWork();
+
+        var service = new AddTransactionService(
+            transactionRepository,
+            positionRepository,
+            idempotencyRepository,
+            unitOfWork,
+            new PositionCalculator(),
+            transactionRequestHasher);
+
+        var firstCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            1_000m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId,
+            "same-key");
+
+        var secondCommand = new AddTransactionCommand(
+            portfolioId,
+            brokerAccountId,
+            instrumentId,
+            TransactionType.Buy,
+            200,
+            10_000m,
+            1_000m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId,
+            "same-key");
+
+        // Act
+        await service.ExecuteAsync(firstCommand);
+
+        var act = async () =>
+            await service.ExecuteAsync(secondCommand);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<IdempotencyConflictException>();
+
+        transactionRepository.Transactions
+            .Should()
+            .ContainSingle();
+
+        idempotencyRepository.Records
+            .Should()
+            .ContainSingle();
+
+        unitOfWork.SaveChangesCallCount
+            .Should()
+            .Be(1);
     }
 }
