@@ -483,16 +483,24 @@ TradeLens therefore separates command and query use cases without introducing se
 - Transaction API
 - Get Transaction API
 - Development authentication
+- Portfolio ownership authorization
 - Global exception handling
 - Standardized API error contract
 - Domain unit tests
 - Application unit tests
+- Integration tests
+  - POST transaction → 201 Created
+  - GET transaction → 200 OK
+  - Position persistence verification
+  - Validation error → 400 Bad Request
+  - Transaction not found → 404 Not Found
+  - Portfolio ownership violation → 403 Forbidden
 
 ### In Progress
 
-- Authorization and portfolio ownership
 - Production-grade authentication
 - Transaction correction
+- Integration test coverage expansion
 
 ### Planned
 
@@ -500,7 +508,6 @@ TradeLens therefore separates command and query use cases without introducing se
 - Optimistic concurrency
 - Portfolio valuation
 - Market price integration
-- Integration tests
 - Observability
 - Production readiness
 
