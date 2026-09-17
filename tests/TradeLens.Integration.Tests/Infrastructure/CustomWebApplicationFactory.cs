@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TradeLens.Domain.Entities;
 using TradeLens.Infrastructure.Persistence;
 
-namespace TradeLens.Integration.Tests;
+namespace TradeLens.Integration.Tests.Infrastructure;
 
 public sealed class CustomWebApplicationFactory
     : WebApplicationFactory<Program>

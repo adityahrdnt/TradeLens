@@ -7,8 +7,9 @@ using TradeLens.Api.Errors;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Domain.Entities;
 using TradeLens.Infrastructure.Persistence;
+using TradeLens.Integration.Tests.Infrastructure;
 
-namespace TradeLens.Integration.Tests;
+namespace TradeLens.Integration.Tests.Transactions;
 
 public class TransactionsApiTests
 {
