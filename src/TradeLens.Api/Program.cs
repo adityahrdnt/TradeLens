@@ -12,6 +12,7 @@ using System.Text.Json.Serialization;
 using TradeLens.Api.Errors;
 using TradeLens.Application.Validators;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
+using TradeLens.Infrastructure.Persistence.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,7 @@ builder.Services.AddScoped<PositionCalculator>();
 
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
+builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
 builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 
 builder.Services.AddHttpContextAccessor();
@@ -74,3 +76,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+public partial class Program
+{
+}
