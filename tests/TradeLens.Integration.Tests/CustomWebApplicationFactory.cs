@@ -1,0 +1,60 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TradeLens.Domain.Entities;
+using TradeLens.Infrastructure.Persistence;
+
+namespace TradeLens.Integration.Tests;
+
+public sealed class CustomWebApplicationFactory
+    : WebApplicationFactory<Program>
+{
+    public static readonly Guid TestUserId =
+        Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    public static readonly Guid TestPortfolioId =
+        Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseEnvironment("Development");
+
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            var settings = new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:TradeLens"] =
+                    "Host=localhost;Port=5433;Database=tradelens_test;Username=tradelens;Password=tradelens"
+            };
+
+            config.AddInMemoryCollection(settings);
+        });
+    }
+
+    public async Task SeedAsync()
+    {
+        using var scope = Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<TradeLensDbContext>();
+
+        await dbContext.Database.MigrateAsync();
+
+        var portfolio = await dbContext.Portfolios
+            .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
+
+        if (portfolio is null)
+        {
+            portfolio = new Portfolio(
+                TestPortfolioId,
+                TestUserId,
+                "Integration Test Portfolio");
+
+            dbContext.Portfolios.Add(portfolio);
+
+            await dbContext.SaveChangesAsync();
+        }
+    }
+}
