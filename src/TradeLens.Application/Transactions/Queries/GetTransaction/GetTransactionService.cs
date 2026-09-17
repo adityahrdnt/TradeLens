@@ -6,11 +6,17 @@ namespace TradeLens.Application.Transactions.Queries.GetTransaction;
 public sealed class GetTransactionService
 {
     private readonly ITransactionRepository _transactionRepository;
+    private readonly IPortfolioRepository _portfolioRepository;
+    private readonly ICurrentUserService _currentUserService;
 
     public GetTransactionService(
-        ITransactionRepository transactionRepository)
+        ITransactionRepository transactionRepository,
+        IPortfolioRepository portfolioRepository,
+        ICurrentUserService currentUserService)
     {
         _transactionRepository = transactionRepository;
+        _portfolioRepository = portfolioRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task<GetTransactionResult> ExecuteAsync(
@@ -25,6 +31,22 @@ public sealed class GetTransactionService
         if (transaction is null)
         {
             throw new TransactionNotFoundException(transactionId);
+        }
+
+        var portfolio =
+            await _portfolioRepository.GetByIdAsync(
+                transaction.PortfolioId,
+                cancellationToken);
+
+        if (portfolio is null)
+        {
+            throw new PortfolioNotFoundException(
+                transaction.PortfolioId);
+        }
+
+        if (portfolio.UserId != _currentUserService.UserId)
+        {
+            throw new PortfolioAccessDeniedException();
         }
 
         return new GetTransactionResult(

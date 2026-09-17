@@ -77,7 +77,21 @@ public sealed class TransactionsController : ControllerBase
             return BadRequest(problemDetails);
         }
 
-        return Ok(validationResult);
+        var result = await _addTransactionService.ExecuteAsync(
+            command,
+            cancellationToken);
+        
+        var response = new AddTransactionResponse(
+            result.TransactionId,
+            result.PositionId,
+            result.PositionQuantity,
+            result.PositionCostBasis,
+            result.PositionAveragePrice);
+
+        return CreatedAtAction(
+            nameof(GetTransaction),
+            new { id = result.TransactionId },
+            result);
     }
 
     [HttpGet("{id:guid}")]

@@ -45,6 +45,20 @@ public sealed class TradeLensExceptionHandler
                     "Transaction Not Found"
                 ),
             
+            PortfolioNotFoundException =>
+                (
+                    StatusCodes.Status404NotFound,
+                    TradeLensErrorCode.PortfolioNotFound,
+                    "Portfolio Not Found"
+                ),
+
+            PortfolioAccessDeniedException =>
+                (
+                    StatusCodes.Status403Forbidden,
+                    TradeLensErrorCode.PortfolioAccessDenied,
+                    "Portfolio Access Denied"
+                ),
+            
             DomainException =>
                 (
                     StatusCodes.Status400BadRequest,
