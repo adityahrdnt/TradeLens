@@ -495,12 +495,20 @@ TradeLens therefore separates command and query use cases without introducing se
   - Validation error → 400 Bad Request
   - Transaction not found → 404 Not Found
   - Portfolio ownership violation → 403 Forbidden
+- Transaction correction domain behavior
+  - Supersede original transaction
+  - Create corrected transaction
+  - Preserve transaction history
+- Transaction correction application workflow
+  - CorrectTransactionService
+  - Portfolio ownership validation
+  - Position recalculation
+  - Application unit tests
 
 ### In Progress
 
-- Production-grade authentication
-- Transaction correction
-- Integration test coverage expansion
+- Transaction correction API
+- Integration test coverage for transaction correction
 
 ### Planned
 

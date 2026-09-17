@@ -1,6 +1,6 @@
 using TradeLens.Domain.Enums;
 
-namespace TradeLens.Application.Transactions.Commands;
+namespace TradeLens.Application.Transactions.Commands.CorrectTransaction;
 
 public sealed record CorrectTransactionCommand(
     Guid TransactionId,
