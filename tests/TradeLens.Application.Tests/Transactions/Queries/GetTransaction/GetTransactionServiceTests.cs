@@ -1,6 +1,6 @@
 using FluentAssertions;
 using TradeLens.Application.Exceptions;
-using TradeLens.Application.Interfaces;
+using TradeLens.Application.Tests.Fakes;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Domain.Entities;
 using TradeLens.Domain.Enums;
@@ -181,71 +181,5 @@ public class GetTransactionServiceTests
             1,
             createdBy,
             DateTimeOffset.UtcNow);
-    }
-
-    private sealed class FakeTransactionRepository
-        : ITransactionRepository
-    {
-        public List<DomainTransaction> Transactions { get; } = [];
-
-        public Task AddAsync(
-            DomainTransaction transaction,
-            CancellationToken cancellationToken = default)
-        {
-            Transactions.Add(transaction);
-            return Task.CompletedTask;
-        }
-
-        public Task<DomainTransaction?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var transaction = Transactions
-                .FirstOrDefault(x => x.Id == id);
-
-            return Task.FromResult(transaction);
-        }
-
-        public Task<IReadOnlyList<DomainTransaction>>
-            GetEffectiveTransactionsAsync(
-                Guid portfolioId,
-                Guid instrumentId,
-                CancellationToken cancellationToken = default)
-        {
-            IReadOnlyList<DomainTransaction> result = Transactions
-                .Where(x =>
-                    x.PortfolioId == portfolioId &&
-                    x.InstrumentId == instrumentId)
-                .ToList();
-
-            return Task.FromResult(result);
-        }
-    }
-
-    private sealed class FakePortfolioRepository
-        : IPortfolioRepository
-    {
-        public List<Portfolio> Portfolios { get; } = [];
-
-        public Task<Portfolio?> GetByIdAsync(
-            Guid portfolioId,
-            CancellationToken cancellationToken = default)
-        {
-            var portfolio = Portfolios
-                .FirstOrDefault(x => x.Id == portfolioId);
-
-            return Task.FromResult(portfolio);
-        }
-    }
-
-    private sealed class FakeCurrentUserService
-        : ICurrentUserService
-    {
-        public FakeCurrentUserService(Guid userId)
-        {
-            UserId = userId;
-        }
-
-        public Guid UserId { get; }
     }
 }
