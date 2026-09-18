@@ -58,104 +58,141 @@ public sealed class AddTransactionService
                 throw new IdempotencyConflictException();
             }
 
-            return new AddTransactionResult(
-                existingRecord.TransactionId,
-                existingRecord.PositionId,
-                existingRecord.PositionQuantity,
-                existingRecord.PositionCostBasis,
-                existingRecord.PositionAveragePrice);
+            return CreateResult(existingRecord);
         }
 
-        var now = DateTimeOffset.UtcNow;
-
-        var transaction = new Transaction(
-            Guid.NewGuid(),
-            command.PortfolioId,
-            command.BrokerAccountId,
-            command.InstrumentId,
-            command.Type,
-            command.Quantity,
-            command.Price,
-            command.Fee,
-            command.TransactionDate,
-            command.Sequence,
-            command.CreatedBy,
-            now);
-
-        var existingTransactions =
-            await _transactionRepository.GetEffectiveTransactionsAsync(
-                command.PortfolioId,
-                command.InstrumentId,
-                cancellationToken);
-
-        var transactions = existingTransactions
-            .Append(transaction)
-            .ToList();
-
-        var calculation =
-            _positionCalculator.Calculate(transactions);
-
-        await _transactionRepository.AddAsync(
-            transaction,
-            cancellationToken);
-
-        var position =
-            await _positionRepository.GetByPortfolioAndInstrumentAsync(
-                command.PortfolioId,
-                command.InstrumentId,
-                cancellationToken);
-
-        if (position is null)
+        try
         {
-            position = Position.Empty(
-                command.PortfolioId,
-                command.InstrumentId,
-                now);
+            return await _unitOfWork.ExecuteInTransactionAsync(
+                async transactionCancellationToken =>
+                {
+                    var now = DateTimeOffset.UtcNow;
 
-            position.Apply(
-                calculation.Quantity,
-                calculation.CostBasis,
-                calculation.AveragePrice,
-                now);
+                    var transaction = new Transaction(
+                        Guid.NewGuid(),
+                        command.PortfolioId,
+                        command.BrokerAccountId,
+                        command.InstrumentId,
+                        command.Type,
+                        command.Quantity,
+                        command.Price,
+                        command.Fee,
+                        command.TransactionDate,
+                        command.Sequence,
+                        command.CreatedBy,
+                        now);
 
-            await _positionRepository.AddAsync(
-                position,
+                    var existingTransactions =
+                        await _transactionRepository
+                            .GetEffectiveTransactionsAsync(
+                                command.PortfolioId,
+                                command.InstrumentId,
+                                transactionCancellationToken);
+
+                    var transactions = existingTransactions
+                        .Append(transaction)
+                        .ToList();
+
+                    var calculation =
+                        _positionCalculator.Calculate(transactions);
+
+                    await _transactionRepository.AddAsync(
+                        transaction,
+                        transactionCancellationToken);
+
+                    var position =
+                        await _positionRepository
+                            .GetByPortfolioAndInstrumentAsync(
+                                command.PortfolioId,
+                                command.InstrumentId,
+                                transactionCancellationToken);
+
+                    if (position is null)
+                    {
+                        position = Position.Empty(
+                            command.PortfolioId,
+                            command.InstrumentId,
+                            now);
+
+                        position.Apply(
+                            calculation.Quantity,
+                            calculation.CostBasis,
+                            calculation.AveragePrice,
+                            now);
+
+                        await _positionRepository.AddAsync(
+                            position,
+                            transactionCancellationToken);
+                    }
+                    else
+                    {
+                        position.Apply(
+                            calculation.Quantity,
+                            calculation.CostBasis,
+                            calculation.AveragePrice,
+                            now);
+
+                        _positionRepository.Update(position);
+                    }
+
+                    var idempotencyRecord = new IdempotencyRecord(
+                        Guid.NewGuid(),
+                        command.CreatedBy,
+                        command.IdempotencyKey,
+                        requestHash,
+                        transaction.Id,
+                        position.Id,
+                        position.Quantity,
+                        position.CostBasis,
+                        position.AveragePrice,
+                        now);
+
+                    await _idempotencyRepository.AddAsync(
+                        idempotencyRecord,
+                        transactionCancellationToken);
+
+                    await _unitOfWork.SaveChangesAsync(
+                        transactionCancellationToken);
+
+                    return new AddTransactionResult(
+                        transaction.Id,
+                        position.Id,
+                        position.Quantity,
+                        position.CostBasis,
+                        position.AveragePrice);
+                },
                 cancellationToken);
         }
-        else
+        catch (IdempotencyConcurrencyException)
         {
-            position.Apply(
-                calculation.Quantity,
-                calculation.CostBasis,
-                calculation.AveragePrice,
-                now);
+            var concurrentRecord =
+                await _idempotencyRepository.GetAsync(
+                    command.CreatedBy,
+                    command.IdempotencyKey,
+                    cancellationToken);
 
-            _positionRepository.Update(position);
+            if (concurrentRecord is null)
+            {
+                throw;
+            }
+
+            if (concurrentRecord.RequestHash != requestHash)
+            {
+                throw new IdempotencyConflictException();
+            }
+
+            return CreateResult(concurrentRecord);
         }
+    }
 
-        var idempotencyRecord = new IdempotencyRecord(
-            Guid.NewGuid(),
-            command.CreatedBy,
-            command.IdempotencyKey,
-            requestHash,
-            transaction.Id,
-            position.Id,
-            position.Quantity,
-            position.CostBasis,
-            position.AveragePrice,
-            now);
-
-        await _idempotencyRepository.AddAsync(
-            idempotencyRecord,
-            cancellationToken);
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
+    private static AddTransactionResult CreateResult(
+        IdempotencyRecord record)
+    {
         return new AddTransactionResult(
-            transaction.Id,
-            position.Id,
-            position.Quantity,
-            position.CostBasis,
-            position.AveragePrice);
+            record.TransactionId,
+            record.PositionId,
+            record.PositionQuantity,
+            record.PositionCostBasis,
+            record.PositionAveragePrice);
     }
 }
