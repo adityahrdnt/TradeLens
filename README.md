@@ -467,24 +467,36 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ---
 
-## Current Status
-
 ### Completed
 
 - Domain transaction model
+
 - Position calculation
+
 - P&L calculation
+
 - EF Core persistence
+
 - PostgreSQL setup
+
 - Repository foundation
+
 - Unit of Work
+
 - Application validation
+
 - Add Transaction use case
+
 - Transaction API
+
 - Get Transaction API
+
 - Development authentication
+
 - Portfolio ownership authorization
+
 - Global exception handling
+
 - Standardized API error contract
 
 - Transaction correction domain behavior
@@ -499,6 +511,7 @@ TradeLens therefore separates command and query use cases without introducing se
   - Application unit tests
 
 - Transaction correction API
+
 - Integration test coverage
   - POST transaction → 201 Created
   - GET transaction → 200 OK
@@ -509,6 +522,7 @@ TradeLens therefore separates command and query use cases without introducing se
   - Transaction correction → 200 OK
   - Concurrent idempotent requests
   - Idempotency conflict handling
+  - Position optimistic concurrency conflict
 
 - Idempotency
   - Required `Idempotency-Key` header
@@ -521,16 +535,23 @@ TradeLens therefore separates command and query use cases without introducing se
   - Concurrent request handling
   - Idempotency concurrency exception handling
 
+- Optimistic concurrency
+  - EF Core concurrency token for Position
+  - Concurrent update detection
+  - Application-level concurrency exception
+  - HTTP 409 conflict mapping
+  - Integration test coverage
+
 - Automated test coverage
   - Domain unit tests
   - Application unit tests
   - Integration tests
   - Application tests: 24 passing
-  - Integration tests: 7 passing
+  - Integration tests: 8 passing
 
 ### In Progress
 
-- Optimistic concurrency for Position
+- API-level concurrency testing
 
 ### Planned
 
@@ -583,14 +604,15 @@ TradeLens therefore separates command and query use cases without introducing se
 ### Phase 6 — Reliability & Observability
 
 - [x] Idempotency
-- [ ] Optimistic concurrency
+- [x] Optimistic concurrency
 - [ ] Structured logging
 - [ ] Traceability
 - [x] Integration testing
 
 ### Phase 7 — Production Readiness
 
-- [x] Docker deployment
+- [x] Containerized development environment
+- [ ] Production Docker deployment
 - [ ] Configuration management
 - [ ] Health checks
 - [ ] Monitoring
