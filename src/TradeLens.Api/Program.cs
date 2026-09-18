@@ -10,11 +10,13 @@ using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Application.Validators;
+using TradeLens.Application.Valuation.Queries.GetPositionValuation;
 using TradeLens.Domain.Services;
 using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
 using TradeLens.Infrastructure.Repositories;
 using TradeLens.Infrastructure.Services;
+using TradeLens.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,10 +43,13 @@ builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
 builder.Services.AddScoped<PositionCalculator>();
+builder.Services.AddScoped<ValuationCalculator>();
+builder.Services.AddScoped<GetPositionValuationService>();
 
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+builder.Services.AddScoped<IPortfolioAccessService, PortfolioAccessService>();
 builder.Services.AddScoped<IIdempotencyRepository, IdempotencyRepository>();
 builder.Services.AddScoped<ITransactionRequestHasher, TransactionRequestHasher>();
 builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();

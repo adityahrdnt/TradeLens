@@ -10,6 +10,9 @@ public static class TradeLensErrorCode
 
     public const string PositionInsufficientQuantity =
         "POSITION_INSUFFICIENT_QUANTITY";
+        
+    public const string PositionNotFound =
+        "POSITION_NOT_FOUND";
 
     public const string PositionConcurrencyConflict =
         "POSITION_CONCURRENCY_CONFLICT";

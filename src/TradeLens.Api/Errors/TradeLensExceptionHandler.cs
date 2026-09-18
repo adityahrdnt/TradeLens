@@ -60,6 +60,13 @@ public sealed class TradeLensExceptionHandler
                     "Portfolio Access Denied"
                 ),
 
+            PositionNotFoundException =>
+                (
+                    StatusCodes.Status404NotFound,
+                    TradeLensErrorCode.PositionNotFound,
+                    "Position Not Found"
+                ),
+
             IdempotencyKeyRequiredException =>
                 (
                     StatusCodes.Status400BadRequest,
