@@ -23,7 +23,8 @@ public class PositionConfiguration
             .IsRequired();
 
         builder.Property(x => x.Version)
-            .IsConcurrencyToken();
+            .IsConcurrencyToken()
+            .IsRequired();
 
         builder.HasIndex(x => new
         {
