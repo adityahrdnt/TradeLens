@@ -176,6 +176,17 @@ The project intentionally avoids unnecessary abstractions and infrastructure suc
 
 These technologies may be considered when the actual system requirements justify their introduction.
 
+### Authorization
+
+Portfolio access is enforced server-side based on the authenticated user identity.
+
+The API does not trust the client to determine ownership. Application services use a centralized `IPortfolioAccessService` to verify that the current user owns the requested portfolio.
+
+Unauthorized portfolio access returns:
+
+- `403 Forbidden`
+- Error code: `PORTFOLIO_ACCESS_DENIED`
+
 ---
 
 ## Domain Model
@@ -467,73 +478,26 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ---
 
+## Current Progress
+
 ### Completed
 
-- Domain transaction model
-
-- Position calculation
-
-- P&L calculation
-
+- Transaction domain model
+- Position and P&L calculation
 - EF Core persistence
-
 - PostgreSQL setup
-
-- Repository foundation
-
+- Repository pattern
 - Unit of Work
-
-- Application validation
-
+- Transaction validation
 - Add Transaction use case
-
-- Transaction API
-
-- Get Transaction API
-
-- Development authentication
-
-- Portfolio ownership authorization
-
-- Global exception handling
-
-- Standardized API error contract
-
-- Transaction correction domain behavior
-  - Supersede original transaction
-  - Create corrected transaction
-  - Preserve transaction history
-
-- Transaction correction application workflow
-  - CorrectTransactionService
-  - Portfolio ownership validation
-  - Position recalculation
-  - Application unit tests
-
-- Transaction correction API
-
-- Integration test coverage
-  - POST transaction → 201 Created
-  - GET transaction → 200 OK
-  - Position persistence verification
-  - Validation error → 400 Bad Request
-  - Transaction not found → 404 Not Found
-  - Portfolio ownership violation → 403 Forbidden
-  - Transaction correction → 200 OK
-  - Concurrent idempotent requests
-  - Idempotency conflict handling
-  - Position optimistic concurrency conflict
+- Historical transaction correction
 
 - Idempotency
-  - Required `Idempotency-Key` header
-  - Request payload hashing
-  - Duplicate request detection
-  - Idempotency conflict detection
-  - Persistent idempotency records
-  - Unique `(UserId, IdempotencyKey)` constraint
-  - Atomic transaction handling
-  - Concurrent request handling
-  - Idempotency concurrency exception handling
+  - Idempotency-Key support
+  - Request hash validation
+  - Atomic idempotency persistence
+  - Concurrent duplicate request handling
+  - Idempotency conflict handling
 
 - Optimistic concurrency
   - EF Core concurrency token for Position
@@ -542,24 +506,49 @@ TradeLens therefore separates command and query use cases without introducing se
   - HTTP 409 conflict mapping
   - Integration test coverage
 
+- Portfolio valuation
+  - Market value calculation
+  - Unrealized P&L calculation
+  - Unrealized P&L percentage
+  - Position valuation query
+  - Valuation API endpoint
+  - Position-not-found handling
+  - Integration test coverage
+
+- Portfolio ownership authorization
+  - Centralized portfolio access validation
+  - Server-side ownership verification
+  - Ownership enforcement for transaction creation
+  - Ownership enforcement for transaction retrieval
+  - Ownership enforcement for transaction correction
+  - Ownership enforcement for portfolio valuation
+  - HTTP 403 access-denied mapping
+  - Integration test coverage
+
 - Automated test coverage
   - Domain unit tests
   - Application unit tests
   - Integration tests
-  - Application tests: 24 passing
-  - Integration tests: 8 passing
+  - 27 Domain tests passing
+  - 30 Application tests passing
+  - 10 Integration tests passing
 
 ### In Progress
 
-- API-level concurrency testing
+- Authentication hardening
+- Market price integration
+- Codebase cleanup and consistency review
 
 ### Planned
 
-- Portfolio valuation
-- Market price integration
-- Authentication hardening
-- Observability
-- Production readiness
+- Structured logging
+- Traceability
+- Health checks
+- Monitoring
+- Production Docker deployment
+- Configuration management
+- CI/CD
+- Operational documentation
 - Final integration test coverage and cleanup
 - Architecture and implementation documentation
 
@@ -594,20 +583,22 @@ TradeLens therefore separates command and query use cases without introducing se
 - [ ] Portfolio valuation
 - [ ] Unrealized P&L
 
-### Phase 5 — Security
+### Phase 5 — Portfolio Analytics
+- [x] Position calculation
+- [x] Realized P&L calculation
+- [x] Unrealized P&L calculation
+- [x] Portfolio position valuation
+- [ ] Market price integration
+- [ ] Portfolio-level valuation aggregation
 
-- [x] Authentication
-- [x] Authorization
-- [x] Portfolio ownership
-- [x] Secure API boundaries
-
-### Phase 6 — Reliability & Observability
+### Phase 6 — Reliability, Security & Observability
 
 - [x] Idempotency
 - [x] Optimistic concurrency
+- [x] Portfolio ownership authorization
+- [x] Integration testing
 - [ ] Structured logging
 - [ ] Traceability
-- [x] Integration testing
 
 ### Phase 7 — Production Readiness
 

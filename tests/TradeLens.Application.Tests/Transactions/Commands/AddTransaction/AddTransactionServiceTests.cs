@@ -5,6 +5,7 @@ using TradeLens.Domain.Enums;
 using TradeLens.Domain.Services;
 using TradeLens.Domain.Exceptions;
 using TradeLens.Application.Tests.Fakes;
+using TradeLens.Domain.Entities;
 
 namespace TradeLens.Application.Tests.Transaction.Commands.AddTransaction;
 
@@ -19,6 +20,17 @@ public class AddTransactionServiceTests
         var instrumentId = Guid.NewGuid();
         var createdBy = Guid.NewGuid();
 
+        var portfolio = new Portfolio(
+            portfolioId,
+            createdBy,
+            "Test Portfolio");
+
+        var portfolioRepository =
+            new FakePortfolioRepository(portfolio);
+
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
         var idempotencyRepository = new FakeIdempotencyRepository();
@@ -26,9 +38,10 @@ public class AddTransactionServiceTests
         var unitOfWork = new FakeUnitOfWork();
         var positionCalculator = new PositionCalculator();
 
-        var service = new AddTransactionService(
+       var service = new AddTransactionService(
             transactionRepository,
             positionRepository,
+            portfolioAccessService,
             idempotencyRepository,
             unitOfWork,
             positionCalculator,
@@ -97,15 +110,15 @@ public class AddTransactionServiceTests
         var idempotencyRepository = new FakeIdempotencyRepository();
         var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
-        var positionCalculator = new PositionCalculator();
 
-        var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            createdBy,
             transactionRepository,
             positionRepository,
             idempotencyRepository,
-            unitOfWork,
-            positionCalculator,
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var firstCommand = new AddTransactionCommand(
             portfolioId,
@@ -174,13 +187,14 @@ public class AddTransactionServiceTests
         var idempotencyRepository = new FakeIdempotencyRepository();
         var transactionRequestHasher = new FakeTransactionRequestHasher();
 
-        var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            userId,
             transactionRepository,
             positionRepository,
             idempotencyRepository,
-            unitOfWork,
-            new PositionCalculator(),
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var buyCommand = new AddTransactionCommand(
             portfolioId,
@@ -237,13 +251,14 @@ public class AddTransactionServiceTests
         var idempotencyRepository = new FakeIdempotencyRepository();
         var transactionRequestHasher = new FakeTransactionRequestHasher();
 
-        var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            userId,
             transactionRepository,
             positionRepository,
             idempotencyRepository,
-            unitOfWork,
-            new PositionCalculator(),
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var buyCommand = new AddTransactionCommand(
             portfolioId,
@@ -301,13 +316,14 @@ public class AddTransactionServiceTests
         var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            userId,
             transactionRepository,
             positionRepository,
             idempotencyRepository,
-            unitOfWork,
-            new PositionCalculator(),
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var command = new AddTransactionCommand(
             portfolioId,
@@ -375,13 +391,14 @@ public class AddTransactionServiceTests
         var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            userId,
             transactionRepository,
             positionRepository,
             idempotencyRepository,
-            unitOfWork,
-            new PositionCalculator(),
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var firstCommand = new AddTransactionCommand(
             portfolioId,
@@ -430,5 +447,92 @@ public class AddTransactionServiceTests
         unitOfWork.SaveChangesCallCount
             .Should()
             .Be(1);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPortfolioBelongsToAnotherUser_ShouldThrowPortfolioAccessDeniedException()
+    {
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var anotherUserId = Guid.NewGuid();
+
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
+        var unitOfWork = new FakeUnitOfWork();
+
+        var service = CreateService(
+            portfolioId,
+            ownerId,
+            transactionRepository,
+            positionRepository,
+            idempotencyRepository,
+            transactionRequestHasher,
+            unitOfWork);
+
+        var command = new AddTransactionCommand(
+            portfolioId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            TransactionType.Buy,
+            100,
+            10_000m,
+            1_000m,
+            new DateOnly(2026, 9, 15),
+            1,
+            anotherUserId,
+            "authorization-test-key");
+
+        // Act
+        var act = async () =>
+            await service.ExecuteAsync(command);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<PortfolioAccessDeniedException>();
+
+        transactionRepository.Transactions
+            .Should()
+            .BeEmpty();
+
+        idempotencyRepository.Records
+            .Should()
+            .BeEmpty();
+
+        unitOfWork.SaveChangesCallCount
+            .Should()
+            .Be(0);
+    }
+
+    private static AddTransactionService CreateService(
+        Guid portfolioId,
+        Guid userId,
+        FakeTransactionRepository transactionRepository,
+        FakePositionRepository positionRepository,
+        FakeIdempotencyRepository idempotencyRepository,
+        FakeTransactionRequestHasher transactionRequestHasher,
+        FakeUnitOfWork unitOfWork)
+    {
+        var portfolio = new Portfolio(
+            portfolioId,
+            userId,
+            "Test Portfolio");
+
+        var portfolioRepository =
+            new FakePortfolioRepository(portfolio);
+
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
+        return new AddTransactionService(
+            transactionRepository,
+            positionRepository,
+            portfolioAccessService,
+            idempotencyRepository,
+            unitOfWork,
+            new PositionCalculator(),
+            transactionRequestHasher);
     }
 }

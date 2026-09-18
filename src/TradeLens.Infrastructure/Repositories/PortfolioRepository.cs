@@ -8,8 +8,7 @@ public sealed class PortfolioRepository : IPortfolioRepository
 {
     private readonly TradeLensDbContext _dbContext;
 
-    public PortfolioRepository(
-        TradeLensDbContext dbContext)
+    public PortfolioRepository(TradeLensDbContext dbContext)
     {
         _dbContext = dbContext;
     }

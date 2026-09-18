@@ -47,12 +47,14 @@ public class CorrectTransactionServiceTests
 
         var positionRepository = new FakePositionRepository();
         var portfolioRepository = new FakePortfolioRepository(portfolio);
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
         var service = new CorrectTransactionService(
             transactionRepository,
             positionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             unitOfWork,
             new PositionCalculator());
 
@@ -101,12 +103,13 @@ public class CorrectTransactionServiceTests
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
         var portfolioRepository = new FakePortfolioRepository();
+        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
         var service = new CorrectTransactionService(
             transactionRepository,
             positionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             unitOfWork,
             new PositionCalculator());
 
@@ -162,12 +165,13 @@ public class CorrectTransactionServiceTests
 
         var positionRepository = new FakePositionRepository();
         var portfolioRepository = new FakePortfolioRepository(portfolio);
+        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
         var service = new CorrectTransactionService(
             transactionRepository,
             positionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             unitOfWork,
             new PositionCalculator());
 
@@ -224,12 +228,13 @@ public class CorrectTransactionServiceTests
 
         var positionRepository = new FakePositionRepository();
         var portfolioRepository = new FakePortfolioRepository(portfolio);
+        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
         var service = new CorrectTransactionService(
             transactionRepository,
             positionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             unitOfWork,
             new PositionCalculator());
 
