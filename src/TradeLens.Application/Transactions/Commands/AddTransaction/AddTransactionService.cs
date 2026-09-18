@@ -13,17 +13,20 @@ public sealed class AddTransactionService
     private readonly PositionCalculator _positionCalculator;
     private readonly IIdempotencyRepository _idempotencyRepository;
     private readonly ITransactionRequestHasher _transactionRequestHasher;
+    private readonly IPortfolioAccessService _portfolioAccessService;
 
     public AddTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
+        IPortfolioAccessService portfolioAccessService,
         IIdempotencyRepository idempotencyRepository,
         IUnitOfWork unitOfWork,
         PositionCalculator positionCalculator,
-    ITransactionRequestHasher transactionRequestHasher)
+        ITransactionRequestHasher transactionRequestHasher)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
+        _portfolioAccessService = portfolioAccessService;
         _idempotencyRepository = idempotencyRepository;
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
@@ -34,6 +37,11 @@ public sealed class AddTransactionService
         AddTransactionCommand command,
         CancellationToken cancellationToken = default)
     {
+        await _portfolioAccessService.GetOwnedPortfolioAsync(
+            command.PortfolioId,
+            command.CreatedBy,
+            cancellationToken);
+
         var requestHash = _transactionRequestHasher.ComputeHash(
             command.PortfolioId,
             command.BrokerAccountId,

@@ -56,6 +56,9 @@ public class GetTransactionApiTests
             "99999999-9999-9999-9999-999999999999");
 
         var otherPortfolioId = Guid.NewGuid();
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var transactionId = Guid.NewGuid();
 
         using (var scope = factory.Services.CreateScope())
         {
@@ -69,47 +72,28 @@ public class GetTransactionApiTests
 
             dbContext.Portfolios.Add(portfolio);
 
+            var transaction = new Transaction(
+                transactionId,
+                otherPortfolioId,
+                brokerAccountId,
+                instrumentId,
+                TradeLens.Domain.Enums.TransactionType.Buy,
+                100,
+                10_000m,
+                100_000m,
+                DateOnly.FromDateTime(DateTime.UtcNow),
+                1,
+                otherUserId,
+                DateTimeOffset.UtcNow);
+
+            dbContext.Transactions.Add(transaction);
+
             await dbContext.SaveChangesAsync();
         }
 
-        var request = new
-        {
-            portfolioId = otherPortfolioId,
-            brokerAccountId = Guid.NewGuid(),
-            instrumentId = Guid.NewGuid(),
-            type = "Buy",
-            quantity = 100,
-            price = 10000m,
-            fee = 100000m,
-            transactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            sequence = 1
-        };
-
-        using var httpRequest = new HttpRequestMessage(
-            HttpMethod.Post,
-            "/api/v1/transactions")
-        {
-            Content = JsonContent.Create(request)
-        };
-
-        httpRequest.Headers.Add(
-            "Idempotency-Key",
-            Guid.NewGuid().ToString());
-
-        var postResponse = await client.SendAsync(httpRequest);
-
-        var result = await postResponse.Content
-            .ReadFromJsonAsync<AddTransactionResponse>();
-
-        Assert.Equal(
-            HttpStatusCode.Created,
-            postResponse.StatusCode);
-
-        Assert.NotNull(result);
-
         // Act
         var response = await client.GetAsync(
-            $"/api/v1/transactions/{result!.TransactionId}");
+            $"/api/v1/transactions/{transactionId}");
 
         var problem = await response.Content
             .ReadFromJsonAsync<TradeLensProblemDetails>();

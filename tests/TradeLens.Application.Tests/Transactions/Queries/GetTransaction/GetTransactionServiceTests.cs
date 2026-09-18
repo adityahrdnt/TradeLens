@@ -41,6 +41,9 @@ public class GetTransactionServiceTests
 
         var transactionRepository = new FakeTransactionRepository();
         var portfolioRepository = new FakePortfolioRepository();
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
         var currentUserService = new FakeCurrentUserService(userId);
 
         transactionRepository.Transactions.Add(transaction);
@@ -48,7 +51,7 @@ public class GetTransactionServiceTests
 
         var service = new GetTransactionService(
             transactionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             currentUserService);
 
         // Act
@@ -75,9 +78,13 @@ public class GetTransactionServiceTests
         // Arrange
         var userId = Guid.NewGuid();
 
+        var portfolioRepository = new FakePortfolioRepository();
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
         var service = new GetTransactionService(
             new FakeTransactionRepository(),
-            new FakePortfolioRepository(),
+            portfolioAccessService,
             new FakeCurrentUserService(userId));
 
         var transactionId = Guid.NewGuid();
@@ -108,9 +115,13 @@ public class GetTransactionServiceTests
         var transactionRepository = new FakeTransactionRepository();
         transactionRepository.Transactions.Add(transaction);
 
+        var portfolioRepository = new FakePortfolioRepository();
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
         var service = new GetTransactionService(
             transactionRepository,
-            new FakePortfolioRepository(),
+            portfolioAccessService,
             new FakeCurrentUserService(userId));
 
         // Act
@@ -148,9 +159,12 @@ public class GetTransactionServiceTests
         transactionRepository.Transactions.Add(transaction);
         portfolioRepository.Portfolios.Add(portfolio);
 
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
         var service = new GetTransactionService(
             transactionRepository,
-            portfolioRepository,
+            portfolioAccessService,
             new FakeCurrentUserService(currentUserId));
 
         // Act

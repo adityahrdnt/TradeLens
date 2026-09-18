@@ -9,20 +9,20 @@ public sealed class CorrectTransactionService
 {
     private readonly ITransactionRepository _transactionRepository;
     private readonly IPositionRepository _positionRepository;
-    private readonly IPortfolioRepository _portfolioRepository;
+    private readonly IPortfolioAccessService _portfolioAccessService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PositionCalculator _positionCalculator;
 
     public CorrectTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
-        IPortfolioRepository portfolioRepository,
+        IPortfolioAccessService portfolioAccessService,
         IUnitOfWork unitOfWork,
         PositionCalculator positionCalculator)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
-        _portfolioRepository = portfolioRepository;
+        _portfolioAccessService = portfolioAccessService;
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
     }
@@ -38,15 +38,10 @@ public sealed class CorrectTransactionService
         if (original is null)
             throw new TransactionNotFoundException(command.TransactionId);
 
-        var portfolio = await _portfolioRepository.GetByIdAsync(
+        await _portfolioAccessService.GetOwnedPortfolioAsync(
             original.PortfolioId,
+            command.CorrectedBy,
             cancellationToken);
-
-        if (portfolio is null)
-            throw new PortfolioNotFoundException(original.PortfolioId);
-
-        if (portfolio.UserId != command.CorrectedBy)
-            throw new PortfolioAccessDeniedException();
 
         var now = DateTimeOffset.UtcNow;
 
