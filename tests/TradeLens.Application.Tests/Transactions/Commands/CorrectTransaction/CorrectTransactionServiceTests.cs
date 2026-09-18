@@ -1,6 +1,5 @@
 using FluentAssertions;
 using TradeLens.Application.Exceptions;
-using TradeLens.Application.Interfaces;
 using TradeLens.Application.Tests.Fakes;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Domain.Entities;
@@ -46,17 +45,13 @@ public class CorrectTransactionServiceTests
         transactionRepository.Transactions.Add(original);
 
         var positionRepository = new FakePositionRepository();
-        var portfolioRepository = new FakePortfolioRepository(portfolio);
-        var portfolioAccessService =
-            new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new CorrectTransactionService(
+        var service = CreateService(
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
-            unitOfWork,
-            new PositionCalculator());
+            portfolio,
+            unitOfWork);
 
         var command = new CorrectTransactionCommand(
             originalTransactionId,
@@ -164,16 +159,13 @@ public class CorrectTransactionServiceTests
         transactionRepository.Transactions.Add(original);
 
         var positionRepository = new FakePositionRepository();
-        var portfolioRepository = new FakePortfolioRepository(portfolio);
-        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new CorrectTransactionService(
+        var service = CreateService(
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
-            unitOfWork,
-            new PositionCalculator());
+            portfolio,
+            unitOfWork);
 
         var command = new CorrectTransactionCommand(
             original.Id,
@@ -227,16 +219,13 @@ public class CorrectTransactionServiceTests
         transactionRepository.Transactions.Add(original);
 
         var positionRepository = new FakePositionRepository();
-        var portfolioRepository = new FakePortfolioRepository(portfolio);
-        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new CorrectTransactionService(
+        var service = CreateService(
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
-            unitOfWork,
-            new PositionCalculator());
+            portfolio,
+            unitOfWork);
 
         var command = new CorrectTransactionCommand(
             original.Id,
@@ -253,5 +242,25 @@ public class CorrectTransactionServiceTests
 
         // Assert
         await act.Should().ThrowAsync<DomainException>();
+    }
+
+    private static CorrectTransactionService CreateService(
+        FakeTransactionRepository transactionRepository,
+        FakePositionRepository positionRepository,
+        Portfolio portfolio,
+        FakeUnitOfWork unitOfWork)
+    {
+        var portfolioRepository =
+            new FakePortfolioRepository(portfolio);
+
+        var portfolioAccessService =
+            new FakePortfolioAccessService(portfolioRepository);
+
+        return new CorrectTransactionService(
+            transactionRepository,
+            positionRepository,
+            portfolioAccessService,
+            unitOfWork,
+            new PositionCalculator());
     }
 }

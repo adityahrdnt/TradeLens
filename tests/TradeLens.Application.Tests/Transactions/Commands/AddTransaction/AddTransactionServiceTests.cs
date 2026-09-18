@@ -20,32 +20,20 @@ public class AddTransactionServiceTests
         var instrumentId = Guid.NewGuid();
         var createdBy = Guid.NewGuid();
 
-        var portfolio = new Portfolio(
-            portfolioId,
-            createdBy,
-            "Test Portfolio");
-
-        var portfolioRepository =
-            new FakePortfolioRepository(portfolio);
-
-        var portfolioAccessService =
-            new FakePortfolioAccessService(portfolioRepository);
-
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
         var idempotencyRepository = new FakeIdempotencyRepository();
         var transactionRequestHasher = new FakeTransactionRequestHasher();
         var unitOfWork = new FakeUnitOfWork();
-        var positionCalculator = new PositionCalculator();
 
-       var service = new AddTransactionService(
+        var service = CreateService(
+            portfolioId,
+            createdBy,
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
             idempotencyRepository,
-            unitOfWork,
-            positionCalculator,
-            transactionRequestHasher);
+            transactionRequestHasher,
+            unitOfWork);
 
         var command = new AddTransactionCommand(
             portfolioId,
