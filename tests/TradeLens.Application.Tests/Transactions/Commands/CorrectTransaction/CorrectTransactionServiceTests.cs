@@ -1,6 +1,7 @@
 using FluentAssertions;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
+using TradeLens.Application.Tests.Fakes;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Domain.Entities;
 using TradeLens.Domain.Enums;
@@ -91,113 +92,7 @@ public class CorrectTransactionServiceTests
         result.PositionAveragePrice.Should().Be(1_300_000m / 120m);
 
         unitOfWork.SaveChangesCallCount.Should().Be(1);
-    }
-
-    private sealed class FakeTransactionRepository : ITransactionRepository
-    {
-        public List<DomainTransaction> Transactions { get; } = [];
-
-        public Task AddAsync(
-            DomainTransaction transaction,
-            CancellationToken cancellationToken = default)
-        {
-            Transactions.Add(transaction);
-            return Task.CompletedTask;
-        }
-
-        public Task<DomainTransaction?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var transaction = Transactions
-                .FirstOrDefault(x => x.Id == id);
-
-            return Task.FromResult(transaction);
-        }
-
-        public Task<IReadOnlyList<DomainTransaction>> GetEffectiveTransactionsAsync(
-            Guid portfolioId,
-            Guid instrumentId,
-            CancellationToken cancellationToken = default)
-        {
-            IReadOnlyList<DomainTransaction> result = Transactions
-                .Where(x =>
-                    x.PortfolioId == portfolioId &&
-                    x.InstrumentId == instrumentId &&
-                    x.Status == TransactionStatus.Active)
-                .OrderBy(x => x.TransactionDate)
-                .ThenBy(x => x.Sequence)
-                .ToList();
-
-            return Task.FromResult(result);
-        }
-    }
-
-    private sealed class FakePositionRepository : IPositionRepository
-    {
-        public List<Position> Positions { get; } = [];
-
-        public Task<Position?> GetByPortfolioAndInstrumentAsync(
-            Guid portfolioId,
-            Guid instrumentId,
-            CancellationToken cancellationToken = default)
-        {
-            var position = Positions.FirstOrDefault(x =>
-                x.PortfolioId == portfolioId &&
-                x.InstrumentId == instrumentId);
-
-            return Task.FromResult(position);
-        }
-
-        public Task AddAsync(
-            Position position,
-            CancellationToken cancellationToken = default)
-        {
-            Positions.Add(position);
-            return Task.CompletedTask;
-        }
-
-        public void Update(Position position)
-        {
-            // Fake repository keeps the same tracked object.
-        }
-    }
-
-    private sealed class FakePortfolioRepository : IPortfolioRepository
-    {
-        private readonly List<Portfolio> _portfolios = [];
-
-        public FakePortfolioRepository()
-        {
-        }
-
-        public FakePortfolioRepository(Portfolio portfolio)
-        {
-            _portfolios.Add(portfolio);
-        }
-
-        public Task<Portfolio?> GetByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default)
-        {
-            var portfolio = _portfolios
-                .FirstOrDefault(x => x.Id == id);
-
-            return Task.FromResult(portfolio);
-        }
-    }
-
-    private sealed class FakeUnitOfWork : IUnitOfWork
-    {
-        public int SaveChangesCallCount { get; private set; }
-
-        public Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default)
-        {
-            SaveChangesCallCount++;
-            return Task.FromResult(1);
-        }
-    }
+    }    
 
     [Fact]
     public async Task ExecuteAsync_WhenTransactionDoesNotExist_ShouldThrowTransactionNotFoundException()
