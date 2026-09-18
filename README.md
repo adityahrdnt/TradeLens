@@ -486,38 +486,61 @@ TradeLens therefore separates command and query use cases without introducing se
 - Portfolio ownership authorization
 - Global exception handling
 - Standardized API error contract
-- Domain unit tests
-- Application unit tests
-- Integration tests
-  - POST transaction → 201 Created
-  - GET transaction → 200 OK
-  - Position persistence verification
-  - Validation error → 400 Bad Request
-  - Transaction not found → 404 Not Found
-  - Portfolio ownership violation → 403 Forbidden
+
 - Transaction correction domain behavior
   - Supersede original transaction
   - Create corrected transaction
   - Preserve transaction history
+
 - Transaction correction application workflow
   - CorrectTransactionService
   - Portfolio ownership validation
   - Position recalculation
   - Application unit tests
 
+- Transaction correction API
+- Integration test coverage
+  - POST transaction → 201 Created
+  - GET transaction → 200 OK
+  - Position persistence verification
+  - Validation error → 400 Bad Request
+  - Transaction not found → 404 Not Found
+  - Portfolio ownership violation → 403 Forbidden
+  - Transaction correction → 200 OK
+  - Concurrent idempotent requests
+  - Idempotency conflict handling
+
+- Idempotency
+  - Required `Idempotency-Key` header
+  - Request payload hashing
+  - Duplicate request detection
+  - Idempotency conflict detection
+  - Persistent idempotency records
+  - Unique `(UserId, IdempotencyKey)` constraint
+  - Atomic transaction handling
+  - Concurrent request handling
+  - Idempotency concurrency exception handling
+
+- Automated test coverage
+  - Domain unit tests
+  - Application unit tests
+  - Integration tests
+  - Application tests: 24 passing
+  - Integration tests: 7 passing
+
 ### In Progress
 
-- Transaction correction API
-- Integration test coverage for transaction correction
+- Optimistic concurrency for Position
 
 ### Planned
 
-- Idempotency
-- Optimistic concurrency
 - Portfolio valuation
 - Market price integration
+- Authentication hardening
 - Observability
 - Production readiness
+- Final integration test coverage and cleanup
+- Architecture and implementation documentation
 
 ---
 
@@ -525,54 +548,54 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ### Phase 1 — Core Domain
 
-- Transaction
-- Position
-- Cost basis
-- P&L
+- [x] Transaction
+- [x] Position
+- [x] Cost basis
+- [x] P&L
 
 ### Phase 2 — Transaction Use Cases
 
-- Add transaction
-- Query transaction
-- Transaction correction
-- Deterministic recalculation
+- [x] Add transaction
+- [x] Query transaction
+- [x] Transaction correction
+- [x] Deterministic recalculation
 
 ### Phase 3 — API
 
-- REST API
-- Validation
-- Error contract
-- Problem Details
+- [x] REST API
+- [x] Validation
+- [x] Error contract
+- [x] Problem Details
 
 ### Phase 4 — Valuation
 
-- Market prices
-- Portfolio valuation
-- Unrealized P&L
+- [ ] Market prices
+- [ ] Portfolio valuation
+- [ ] Unrealized P&L
 
 ### Phase 5 — Security
 
-- Authentication
-- Authorization
-- Portfolio ownership
-- Secure API boundaries
+- [x] Authentication
+- [x] Authorization
+- [x] Portfolio ownership
+- [x] Secure API boundaries
 
 ### Phase 6 — Reliability & Observability
 
-- Idempotency
-- Optimistic concurrency
-- Structured logging
-- Traceability
-- Integration testing
+- [x] Idempotency
+- [ ] Optimistic concurrency
+- [ ] Structured logging
+- [ ] Traceability
+- [x] Integration testing
 
 ### Phase 7 — Production Readiness
 
-- Docker deployment
-- Configuration management
-- Health checks
-- Monitoring
-- Operational documentation
-- CI/CD
+- [x] Docker deployment
+- [ ] Configuration management
+- [ ] Health checks
+- [ ] Monitoring
+- [ ] Operational documentation
+- [ ] CI/CD
 
 ---
 
