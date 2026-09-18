@@ -73,6 +73,13 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.IdempotencyConflict,
                     "Idempotency Conflict"
                 ),
+
+            PositionConcurrencyException =>
+                (
+                    StatusCodes.Status409Conflict,
+                    TradeLensErrorCode.PositionConcurrencyConflict,
+                    "Position Concurrency Conflict"
+                ),
             
             DomainException =>
                 (
