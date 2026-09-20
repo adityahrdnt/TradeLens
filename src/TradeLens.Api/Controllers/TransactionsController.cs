@@ -24,14 +24,14 @@ public sealed class TransactionsController : ControllerBase
     public TransactionsController(
         AddTransactionService addTransactionService,
         CorrectTransactionService correctTransactionService,
-        ICurrentUserService currentUserService,
         GetTransactionService getTransactionService,
+        ICurrentUserService currentUserService,
         IValidator<AddTransactionCommand> validator)
     {
         _addTransactionService = addTransactionService;
         _correctTransactionService = correctTransactionService;
-        _currentUserService = currentUserService;
         _getTransactionService = getTransactionService;
+        _currentUserService = currentUserService;
         _validator = validator;
     }
 
@@ -57,7 +57,7 @@ public sealed class TransactionsController : ControllerBase
             request.TransactionDate,
             request.Sequence,
             _currentUserService.UserId,
-            idempotencyKey ?? string.Empty);
+            idempotencyKey);
 
         var validationResult =
             await _validator.ValidateAsync(
@@ -72,7 +72,7 @@ public sealed class TransactionsController : ControllerBase
         var result = await _addTransactionService.ExecuteAsync(
             command,
             cancellationToken);
-        
+
         var response = new AddTransactionResponse(
             result.TransactionId,
             result.PositionId,

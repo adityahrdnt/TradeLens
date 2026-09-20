@@ -26,13 +26,10 @@ public static class TradeLensErrorCode
     public const string AuthenticationRequired =
         "AUTHENTICATION_REQUIRED";
 
-    public const string InvalidAuthentication =
-        "INVALID_AUTHENTICATION";
-
     public const string InternalError =
         "INTERNAL_ERROR";
 
-    public const string IdempotencyConflict = 
+    public const string IdempotencyConflict =
         "IDEMPOTENCY_CONFLICT";
     
     public const string IdempotencyKeyRequired =
