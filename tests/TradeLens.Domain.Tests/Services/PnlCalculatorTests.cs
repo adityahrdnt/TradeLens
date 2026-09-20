@@ -106,6 +106,4 @@ public class PnlCalculatorTests
         action.Should()
             .Throw<ArgumentOutOfRangeException>();
     }
-
-
 }

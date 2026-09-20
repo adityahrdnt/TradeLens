@@ -133,9 +133,8 @@ public class PositionCalculatorTests
         var action = () => calculator.Calculate(transactions);
 
         action.Should()
-            .Throw<DomainException>()
-            .WithMessage(
-                "Sell quantity cannot exceed current position.");
+            .Throw<PositionInsufficientQuantityException>()
+            .WithMessage("Sell quantity cannot exceed current position.");
     }
 
     [Fact]
