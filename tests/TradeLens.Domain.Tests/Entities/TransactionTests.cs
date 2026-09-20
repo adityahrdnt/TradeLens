@@ -67,20 +67,6 @@ public class TransactionTests
     }
 
     [Fact]
-    public void Supersede_WhenTransactionIsVoided_ShouldThrow()
-    {
-        // Arrange
-        var transaction = CreateTransaction();
-
-        // Act
-        // Untuk sementara transaction belum memiliki public Void() method.
-        // Test ini akan kita tambahkan setelah VOID behavior dibuat.
-
-        // Assert
-        true.Should().BeTrue();
-    }
-
-    [Fact]
     public void Supersede_WhenReasonIsEmpty_ShouldThrow()
     {
         // Arrange
