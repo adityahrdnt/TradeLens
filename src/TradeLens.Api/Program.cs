@@ -1,11 +1,12 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using TradeLens.Api.Authentication;
 using TradeLens.Api.Errors;
 using TradeLens.Api.Services;
 using TradeLens.Application.Interfaces;
+using TradeLens.Application.Services;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
@@ -16,12 +17,9 @@ using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
 using TradeLens.Infrastructure.Repositories;
 using TradeLens.Infrastructure.Services;
-using TradeLens.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<TradeLensDbContext>(options =>
@@ -69,7 +67,6 @@ builder.Services.AddExceptionHandler<TradeLensExceptionHandler>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
