@@ -1,6 +1,10 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 using TradeLens.Api.Authentication;
 using TradeLens.Api.Errors;
@@ -19,6 +23,12 @@ using TradeLens.Infrastructure.Repositories;
 using TradeLens.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddOptions<JwtOptions>()
+    .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -54,14 +64,55 @@ builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-builder.Services
-    .AddAuthentication("Development")
-    .AddScheme<AuthenticationSchemeOptions, DevelopmentAuthenticationHandler>(
-        "Development",
-        _ => { });
+builder.Services.AddScoped<JwtTokenGenerator>();
 
 builder.Services.AddAuthorization();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services
+        .AddAuthentication("Development")
+        .AddScheme<
+            AuthenticationSchemeOptions,
+            DevelopmentAuthenticationHandler>(
+            "Development",
+            _ => { });
+}
+else
+{
+    builder.Services
+        .AddAuthentication("Bearer")
+        .AddJwtBearer("Bearer");
+
+    builder.Services
+        .AddOptions<JwtBearerOptions>("Bearer")
+        .Configure<IOptions<JwtOptions>>(
+            (options, jwtOptions) =>
+            {
+                options.TokenValidationParameters =
+                    new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer =
+                            jwtOptions.Value.Issuer,
+
+                        ValidateAudience = true,
+                        ValidAudience =
+                            jwtOptions.Value.Audience,
+
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey =
+                            new SymmetricSecurityKey(
+                                Encoding.UTF8.GetBytes(
+                                    jwtOptions.Value.SecretKey)),
+
+                        ValidateLifetime = true,
+
+                        ClockSkew = TimeSpan.FromMinutes(1)
+                    };
+            });
+}
+
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TradeLensExceptionHandler>();
 

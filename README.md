@@ -525,22 +525,40 @@ TradeLens therefore separates command and query use cases without introducing se
   - HTTP 403 access-denied mapping
   - Integration test coverage
 
+ - Authentication hardening
+
+   - Development authentication handler
+   - Production JWT Bearer authentication
+
+   - JWT issuer validation
+
+   - JWT audience validation
+
+   - JWT signing-key validation
+
+   -  JWT lifetime validation
+   - Invalid JWT → HTTP 401
+   - Valid JWT + unauthorized portfolio → HTTP 403
+   - JWT integration test coverage
+
+- Codebase cleanup and consistency review
+
 - Automated test coverage
   - Domain unit tests
   - Application unit tests
   - Integration tests
   - 27 Domain tests passing
-  - 30 Application tests passing
-  - 10 Integration tests passing
+  - 33 Application tests passing
+  - 13 Integration tests passing
 
 ### In Progress
 
-- Authentication hardening
 - Market price integration
 - Codebase cleanup and consistency review
 
 ### Planned
 
+- Portfolio-level valuation aggregation
 - Structured logging
 - Traceability
 - Health checks
@@ -580,8 +598,8 @@ TradeLens therefore separates command and query use cases without introducing se
 ### Phase 4 — Valuation
 
 - [ ] Market prices
-- [ ] Portfolio valuation
-- [ ] Unrealized P&L
+- [x] Portfolio valuation
+- [x] Unrealized P&L
 
 ### Phase 5 — Portfolio Analytics
 - [x] Position calculation
