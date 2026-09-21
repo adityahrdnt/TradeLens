@@ -13,6 +13,8 @@ public class TradeLensDbContext : DbContext
 
     public DbSet<Instrument> Instruments => Set<Instrument>();
 
+    public DbSet<MarketPrice> MarketPrices { get; set; }
+
     public DbSet<Portfolio> Portfolios => Set<Portfolio>();
 
     public DbSet<Transaction> Transactions => Set<Transaction>();
