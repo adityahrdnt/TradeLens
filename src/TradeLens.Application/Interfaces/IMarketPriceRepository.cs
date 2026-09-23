@@ -7,4 +7,8 @@ public interface IMarketPriceRepository
     Task<MarketPrice?> GetLatestAsync(
         Guid instrumentId,
         CancellationToken cancellationToken = default);
+
+    Task AddAsync(
+        MarketPrice marketPrice,
+        CancellationToken cancellationToken = default);
 }

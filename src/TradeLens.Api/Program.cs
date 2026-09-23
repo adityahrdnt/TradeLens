@@ -10,6 +10,7 @@ using TradeLens.Api.Authentication;
 using TradeLens.Api.Errors;
 using TradeLens.Api.Services;
 using TradeLens.Application.Interfaces;
+using TradeLens.Application.MarketPrices;
 using TradeLens.Application.Services;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
@@ -47,6 +48,7 @@ builder.Services
 builder.Services.AddValidatorsFromAssemblyContaining<
     AddTransactionCommandValidator>();
 
+builder.Services.AddScoped<MarketPriceSyncService>();
 builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
@@ -57,6 +59,7 @@ builder.Services.AddScoped<GetPositionValuationService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
 builder.Services.AddScoped<IMarketPriceRepository, MarketPriceRepository>();
 builder.Services.AddScoped<IPortfolioAccessService, PortfolioAccessService>();
 builder.Services.AddScoped<IIdempotencyRepository, IdempotencyRepository>();

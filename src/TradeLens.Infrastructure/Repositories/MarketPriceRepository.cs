@@ -23,4 +23,13 @@ public sealed class MarketPriceRepository : IMarketPriceRepository
             .OrderByDescending(x => x.PriceTimestamp)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public Task AddAsync(
+        MarketPrice marketPrice,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.MarketPrices.AddAsync(
+            marketPrice,
+            cancellationToken).AsTask();
+    }
 }

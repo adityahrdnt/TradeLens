@@ -6,6 +6,7 @@ namespace TradeLens.Application.Tests.Fakes;
 public sealed class FakeMarketPriceRepository : IMarketPriceRepository
 {
     public List<MarketPrice> MarketPrices { get; } = new();
+    public CancellationToken LastCancellationToken { get; private set; }
 
     public Task<MarketPrice?> GetLatestAsync(
         Guid instrumentId,
@@ -17,5 +18,16 @@ public sealed class FakeMarketPriceRepository : IMarketPriceRepository
             .FirstOrDefault();
 
         return Task.FromResult(result);
+    }
+
+    public Task AddAsync(
+        MarketPrice marketPrice,
+        CancellationToken cancellationToken = default)
+    {
+        LastCancellationToken = cancellationToken;
+
+        MarketPrices.Add(marketPrice);
+
+        return Task.CompletedTask;
     }
 }
