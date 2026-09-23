@@ -7,4 +7,7 @@ public interface IInstrumentRepository
     Task<Instrument?> GetBySymbolAsync(
         string symbol,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<Instrument>> GetAllAsync(
+        CancellationToken cancellationToken = default);
 }

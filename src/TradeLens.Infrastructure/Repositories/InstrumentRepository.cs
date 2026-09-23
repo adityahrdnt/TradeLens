@@ -23,4 +23,13 @@ public sealed class InstrumentRepository : IInstrumentRepository
                 x => x.Symbol == symbol,
                 cancellationToken);
     }
+
+    public async Task<IReadOnlyCollection<Instrument>> GetAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Instruments
+            .AsNoTracking()
+            .OrderBy(x => x.Symbol)
+            .ToListAsync(cancellationToken);
+    }
 }

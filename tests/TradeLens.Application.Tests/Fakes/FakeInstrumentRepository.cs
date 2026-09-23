@@ -16,4 +16,12 @@ public sealed class FakeInstrumentRepository : IInstrumentRepository
 
         return Task.FromResult(result);
     }
+
+    public Task<IReadOnlyCollection<Instrument>> GetAllAsync(
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyCollection<Instrument> result = Instruments;
+
+        return Task.FromResult(result);
+    }
 }

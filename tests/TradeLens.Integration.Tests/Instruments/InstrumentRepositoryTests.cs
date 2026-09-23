@@ -55,6 +55,62 @@ public sealed class InstrumentRepositoryTests
         result.Currency.Should().Be("IDR");
     }
 
+    [Fact]
+    public async Task GetAllAsync_ShouldReturnAllInstrumentsOrderedBySymbol()
+    {
+        // Arrange
+        await _factory.SeedAsync();
+
+        var firstInstrumentId = Guid.NewGuid();
+        var secondInstrumentId = Guid.NewGuid();
+
+        var firstSymbol =
+            $"T{firstInstrumentId.ToString("N")[..10]}"
+                .ToUpperInvariant();
+
+        var secondSymbol =
+            $"T{secondInstrumentId.ToString("N")[..10]}"
+                .ToUpperInvariant();
+
+        await using (var context = CreateDbContext())
+        {
+            context.Instruments.AddRange(
+                new Instrument(
+                    firstInstrumentId,
+                    firstSymbol,
+                    "First Test Instrument",
+                    "IDR"),
+                new Instrument(
+                    secondInstrumentId,
+                    secondSymbol,
+                    "Second Test Instrument",
+                    "IDR"));
+
+            await context.SaveChangesAsync();
+        }
+
+        await using var repositoryContext = CreateDbContext();
+
+        var repository =
+            new InstrumentRepository(repositoryContext);
+
+        // Act
+        var result =
+            await repository.GetAllAsync();
+
+        // Assert
+        result.Should().Contain(x =>
+            x.Id == firstInstrumentId);
+
+        result.Should().Contain(x =>
+            x.Id == secondInstrumentId);
+
+        result
+            .Select(x => x.Symbol)
+            .Should()
+            .BeInAscendingOrder();
+    }
+
     private TradeLensDbContext CreateDbContext()
     {
         var options =
