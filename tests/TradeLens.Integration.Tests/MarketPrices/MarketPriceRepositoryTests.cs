@@ -72,7 +72,7 @@ public sealed class MarketPriceRepositoryTests
         context.Instruments.Add(
             new Instrument(
                 instrumentId,
-                "TEST",
+                $"T{instrumentId.ToString("N")[..10]}",
                 "Test Instrument",
                 "IDR"));
 

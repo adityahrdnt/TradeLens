@@ -21,13 +21,11 @@ public sealed class PositionsController : ControllerBase
     public async Task<IActionResult> GetValuation(
         Guid portfolioId,
         Guid instrumentId,
-        [FromQuery] decimal marketPrice,
         CancellationToken cancellationToken)
     {
         var query = new GetPositionValuationQuery(
             portfolioId,
-            instrumentId,
-            marketPrice);
+            instrumentId);
 
         var result =
             await _getPositionValuationService.ExecuteAsync(
