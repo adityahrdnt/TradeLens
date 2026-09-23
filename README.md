@@ -50,40 +50,27 @@ TradeLens provides a domain-oriented application model for maintaining this info
 ### Completed
 
 - [x] Transaction domain model
-- [x] Position calculation
-- [x] Realized P&L calculation
+- [x] Position and P&L calculation
 - [x] PostgreSQL persistence
 - [x] Entity Framework Core
 - [x] Repository abstraction
 - [x] Unit of Work
-- [x] Application validation with FluentValidation
+- [x] Application validation
 - [x] Add Transaction use case
+- [x] Transaction correction
 - [x] Transaction API
 - [x] Get Transaction API
+- [x] Idempotency
+- [x] Optimistic concurrency
+- [x] Portfolio valuation
+- [x] Portfolio ownership authorization
 - [x] Development authentication
+- [x] Production JWT Bearer authentication
 - [x] Global exception handling
 - [x] Standardized API error contract
-- [x] Validation error contract
-- [x] Business-rule error contract
-- [x] Transaction-not-found error contract
-- [x] Domain and application unit tests
-
-### In Progress
-
-- [ ] Authentication hardening / JWT
-- [ ] Authorization and portfolio ownership
-- [ ] Transaction correction
-
-### Planned
-
-- [ ] Idempotency
-- [ ] Optimistic concurrency
-- [ ] Portfolio valuation
-- [ ] Market price integration
-- [ ] Integration tests
-- [ ] Observability
-- [ ] Operational monitoring
-- [ ] Production deployment
+- [x] Market price integration foundation
+- [x] Background market price synchronization
+- [x] Domain, application, and integration tests
 
 ---
 
@@ -160,7 +147,7 @@ TradeLens currently uses:
 - Domain Services
 - Lightweight CQRS-style separation between commands and queries
 - DTOs for API boundaries
-- Optimistic concurrency foundation
+- Optimistic concurrency
 - Problem Details-based API error contract
 
 The project intentionally avoids unnecessary abstractions and infrastructure such as:
@@ -202,10 +189,13 @@ User
 
 Instrument
  ├── Transaction
- └── Position
+ ├── Position
+ └── MarketPrice
 
-MarketPrice
- └── Portfolio Valuation
+Portfolio Valuation
+ ├── Portfolio
+ ├── Position
+ └── MarketPrice
 ```
 
 ### Transaction History
@@ -259,14 +249,16 @@ Base path:
 POST /api/v1/transactions
 
 GET  /api/v1/transactions/{id}
+
+POST /api/v1/transactions/{id}/corrections
+
+GET  /api/v1/portfolios/{portfolioId}/positions/{instrumentId}/valuation
 ```
 
 ### Planned
 
 ```text
-GET  /api/v1/transactions
-
-POST /api/v1/transactions/{id}/corrections
+GET /api/v1/transactions
 
 GET /api/v1/positions
 
@@ -433,10 +425,20 @@ Current automated tests cover:
 - Position calculations
 - Realized P&L calculations
 - Add Transaction use case
+- Transaction correction
 - Validation behavior
 - Oversell business rules
+- Idempotency and concurrent duplicate requests
+- Optimistic concurrency
+- Portfolio ownership authorization
+- JWT authentication
+- Portfolio valuation
+- Market price persistence
+- Market price synchronization
+- API integration
+- PostgreSQL integration
 
-Integration tests for API and PostgreSQL interaction are planned.
+The full solution test suite is currently passing.
 
 ---
 
@@ -525,21 +527,33 @@ TradeLens therefore separates command and query use cases without introducing se
   - HTTP 403 access-denied mapping
   - Integration test coverage
 
- - Authentication hardening
+- Authentication hardening
+  - Development authentication handler
+  - Production JWT Bearer authentication
+  - JWT issuer validation
+  - JWT audience validation
+  - JWT signing-key validation
+  - JWT lifetime validation
+  - Invalid JWT → HTTP 401
+  - Valid JWT + unauthorized portfolio → HTTP 403
+  - JWT integration test coverage
 
-   - Development authentication handler
-   - Production JWT Bearer authentication
-
-   - JWT issuer validation
-
-   - JWT audience validation
-
-   - JWT signing-key validation
-
-   -  JWT lifetime validation
-   - Invalid JWT → HTTP 401
-   - Valid JWT + unauthorized portfolio → HTTP 403
-   - JWT integration test coverage
+- Market price integration foundation
+  - MarketPrice domain entity
+  - EF Core persistence and migration
+  - Market price repository
+  - Latest market price query
+  - Market price provider abstraction
+  - Application-level market price sync service
+  - Market price synchronization job
+  - Background synchronization service
+  - Configurable synchronization interval
+  - Unknown instrument handling
+  - Market price integration with portfolio valuation
+  - Missing market price handling
+  - Market price repository test coverage
+  - Market price synchronization test coverage
+  - Background service registration test coverage
 
 - Codebase cleanup and consistency review
 
@@ -547,14 +561,14 @@ TradeLens therefore separates command and query use cases without introducing se
   - Domain unit tests
   - Application unit tests
   - Integration tests
-  - 27 Domain tests passing
-  - 33 Application tests passing
-  - 13 Integration tests passing
+  - Full solution test suite passing
 
 ### In Progress
 
-- Market price integration
-- Codebase cleanup and consistency review
+- External market price provider integration
+- Market price freshness policy
+- Market price provider failure and retry strategy
+- Market-hours synchronization strategy
 
 ### Planned
 
@@ -597,16 +611,24 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ### Phase 4 — Valuation
 
-- [ ] Market prices
+- [x] Market price persistence
+- [x] Market price repository
+- [x] Latest market price retrieval
+- [x] Market price provider abstraction
+- [x] Market price synchronization service
+- [x] Background market price synchronization
 - [x] Portfolio valuation
 - [x] Unrealized P&L
 
 ### Phase 5 — Portfolio Analytics
+
 - [x] Position calculation
 - [x] Realized P&L calculation
 - [x] Unrealized P&L calculation
 - [x] Portfolio position valuation
-- [ ] Market price integration
+- [x] Market price integration foundation
+- [ ] External market price provider
+- [ ] Market price freshness policy
 - [ ] Portfolio-level valuation aggregation
 
 ### Phase 6 — Reliability, Security & Observability
@@ -614,6 +636,7 @@ TradeLens therefore separates command and query use cases without introducing se
 - [x] Idempotency
 - [x] Optimistic concurrency
 - [x] Portfolio ownership authorization
+- [x] Authentication hardening
 - [x] Integration testing
 - [ ] Structured logging
 - [ ] Traceability
