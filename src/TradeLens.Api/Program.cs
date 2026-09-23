@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using TradeLens.Api.Authentication;
+using TradeLens.Api.BackgroundServices;
 using TradeLens.Api.Errors;
 using TradeLens.Api.Services;
 using TradeLens.Application.Interfaces;
@@ -31,8 +32,15 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<MarketPriceOptions>()
+    .Bind(builder.Configuration.GetSection(
+        MarketPriceOptions.SectionName))
+    .ValidateOnStart();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddDbContext<TradeLensDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("TradeLens")));
@@ -49,6 +57,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<
     AddTransactionCommandValidator>();
 
 builder.Services.AddScoped<MarketPriceSyncService>();
+builder.Services.AddScoped<IMarketPriceSyncJob, MarketPriceSyncJob>();
+
 builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
@@ -69,6 +79,9 @@ builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<JwtTokenGenerator>();
+
+builder.Services.AddHostedService<
+    MarketPriceSyncBackgroundService>();
 
 builder.Services.AddAuthorization();
 
@@ -138,7 +151,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
 
 public partial class Program
 {

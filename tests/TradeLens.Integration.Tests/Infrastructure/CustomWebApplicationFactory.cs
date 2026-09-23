@@ -36,9 +36,14 @@ public sealed class CustomWebApplicationFactory
 
         builder.ConfigureServices(services =>
         {
-            services.AddScoped<
-                IMarketPriceProvider,
-                FakeMarketPriceProvider>();
+            var fakeMarketPriceProvider =
+                new FakeMarketPriceProvider();
+
+            services.AddSingleton<IMarketPriceProvider>(
+                fakeMarketPriceProvider);
+
+            services.AddSingleton(
+                fakeMarketPriceProvider);
         });
     }
 
