@@ -7,9 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
 using TradeLens.Api.Authentication;
+using TradeLens.Api.BackgroundServices;
 using TradeLens.Api.Errors;
 using TradeLens.Api.Services;
 using TradeLens.Application.Interfaces;
+using TradeLens.Application.MarketPrices;
 using TradeLens.Application.Services;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
@@ -30,8 +32,15 @@ builder.Services
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<MarketPriceOptions>()
+    .Bind(builder.Configuration.GetSection(
+        MarketPriceOptions.SectionName))
+    .ValidateOnStart();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddDbContext<TradeLensDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("TradeLens")));
@@ -47,6 +56,9 @@ builder.Services
 builder.Services.AddValidatorsFromAssemblyContaining<
     AddTransactionCommandValidator>();
 
+builder.Services.AddScoped<MarketPriceSyncService>();
+builder.Services.AddScoped<IMarketPriceSyncJob, MarketPriceSyncJob>();
+
 builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
@@ -57,6 +69,8 @@ builder.Services.AddScoped<GetPositionValuationService>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();
+builder.Services.AddScoped<IMarketPriceRepository, MarketPriceRepository>();
 builder.Services.AddScoped<IPortfolioAccessService, PortfolioAccessService>();
 builder.Services.AddScoped<IIdempotencyRepository, IdempotencyRepository>();
 builder.Services.AddScoped<ITransactionRequestHasher, TransactionRequestHasher>();
@@ -65,6 +79,9 @@ builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<JwtTokenGenerator>();
+
+builder.Services.AddHostedService<
+    MarketPriceSyncBackgroundService>();
 
 builder.Services.AddAuthorization();
 
@@ -134,7 +151,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
 
 public partial class Program
 {

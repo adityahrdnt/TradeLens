@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
 using TradeLens.Infrastructure.Persistence;
+using TradeLens.Integration.Tests.Fakes;
 
 namespace TradeLens.Integration.Tests.Infrastructure;
 
@@ -30,6 +32,18 @@ public sealed class CustomWebApplicationFactory
             };
 
             config.AddInMemoryCollection(settings);
+        });
+
+        builder.ConfigureServices(services =>
+        {
+            var fakeMarketPriceProvider =
+                new FakeMarketPriceProvider();
+
+            services.AddSingleton<IMarketPriceProvider>(
+                fakeMarketPriceProvider);
+
+            services.AddSingleton(
+                fakeMarketPriceProvider);
         });
     }
 

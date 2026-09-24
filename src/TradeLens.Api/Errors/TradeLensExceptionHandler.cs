@@ -38,6 +38,13 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.PositionInsufficientQuantity,
                     "Insufficient Position Quantity"
                 ),
+            
+            MarketPriceNotAvailableException =>
+                (
+                    StatusCodes.Status400BadRequest,
+                    TradeLensErrorCode.MarketPriceNotAvailable,
+                    "Market Price Not Available"
+                ),  
 
             TransactionNotFoundException =>
                 (
