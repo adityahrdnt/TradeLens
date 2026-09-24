@@ -311,10 +311,41 @@ The API uses stable machine-readable error codes so clients do not need to parse
 - Entity Framework Core
 - PostgreSQL
 - Docker
+- Microsoft.Extensions.Http.Resilience
 - xUnit
 - FluentAssertions
 - FluentValidation
 - Swagger / OpenAPI
+
+---
+
+## Market Price Integration
+
+TradeLens uses an abstraction-based market price provider architecture so that market data sources can be replaced without changing application-level business logic.
+
+```text
+                    IMarketPriceProvider
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+YahooFinanceMarketPriceProvider    IdxMarketPriceProvider
+       Development / Demo                Future
+```
+
+The current Yahoo Finance provider is intended for development and demonstration purposes. It should not be considered a production commercial market-data source without verifying the applicable licensing and usage terms.
+
+The HTTP client uses the standard .NET resilience handler for transient HTTP failures, including retry behavior.
+
+Example retry scenario covered by integration tests:
+HTTP 503
+   ↓ retry
+HTTP 503
+   ↓ retry
+HTTP 200
+   ↓
+Market price successfully retrieved
+
+The application layer depends only on IMarketPriceProvider, keeping the domain and application layers independent from the external market-data source.
 
 ---
 
@@ -435,10 +466,19 @@ Current automated tests cover:
 - Portfolio valuation
 - Market price persistence
 - Market price synchronization
+- External market price provider mapping
+- Market price provider error handling
+- HTTP resilience and retry behavior
 - API integration
 - PostgreSQL integration
 
 The full solution test suite is currently passing.
+
+Current test suite:
+- Domain: 29 tests
+- Application: 43 tests
+- Integration: 25 tests
+- Total: 97 tests
 
 ---
 
@@ -555,6 +595,14 @@ TradeLens therefore separates command and query use cases without introducing se
   - Market price synchronization test coverage
   - Background service registration test coverage
 
+- External market price provider integration
+  - Yahoo Finance development/demo provider
+  - IDX symbol mapping to Yahoo Finance symbols
+  - Latest available market price extraction
+  - Provider-level error handling
+  - HTTP resilience and retry strategy
+  - Integration test coverage
+
 - Codebase cleanup and consistency review
 
 - Automated test coverage
@@ -565,10 +613,11 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ### In Progress
 
-- External market price provider integration
 - Market price freshness policy
-- Market price provider failure and retry strategy
 - Market-hours synchronization strategy
+- Portfolio-level valuation aggregation
+- Structured logging
+- Traceability
 
 ### Planned
 
@@ -627,7 +676,7 @@ TradeLens therefore separates command and query use cases without introducing se
 - [x] Unrealized P&L calculation
 - [x] Portfolio position valuation
 - [x] Market price integration foundation
-- [ ] External market price provider
+- [x] External market price provider
 - [ ] Market price freshness policy
 - [ ] Portfolio-level valuation aggregation
 
@@ -637,6 +686,7 @@ TradeLens therefore separates command and query use cases without introducing se
 - [x] Optimistic concurrency
 - [x] Portfolio ownership authorization
 - [x] Authentication hardening
+- [x] HTTP resilience and retry strategy
 - [x] Integration testing
 - [ ] Structured logging
 - [ ] Traceability

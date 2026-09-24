@@ -48,22 +48,24 @@ builder.Services
         "Yahoo Finance base URL is required.")
     .ValidateOnStart();
 
-builder.Services.AddHttpClient(
-    "YahooFinance",
-    (serviceProvider, client) =>
-    {
-        var options =
-            serviceProvider
-                .GetRequiredService<
-                    IOptions<YahooFinanceOptions>>()
-                .Value;
+builder.Services
+    .AddHttpClient(
+        "YahooFinance",
+        (serviceProvider, client) =>
+        {
+            var options =
+                serviceProvider
+                    .GetRequiredService<
+                        IOptions<YahooFinanceOptions>>()
+                    .Value;
 
-        client.BaseAddress =
-            new Uri(options.BaseUrl);
+            client.BaseAddress =
+                new Uri(options.BaseUrl);
 
-        client.Timeout =
-            TimeSpan.FromSeconds(10);
-    });
+            client.Timeout =
+                TimeSpan.FromSeconds(10);
+        })
+    .AddStandardResilienceHandler();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
