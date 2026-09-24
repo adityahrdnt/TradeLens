@@ -196,9 +196,13 @@ public sealed class GetPositionValuationServiceTests
         var currentUserService =
             new FakeCurrentUserService(anotherUserId);
 
+        var marketPriceFreshnessPolicy =
+            new FakeMarketPriceFreshnessPolicy();
+
         var service = new GetPositionValuationService(
             repository,
             marketPriceRepository,
+            marketPriceFreshnessPolicy,
             portfolioAccessService,
             new ValuationCalculator(),
             currentUserService);
@@ -320,6 +324,85 @@ public sealed class GetPositionValuationServiceTests
             .ThrowAsync<MarketPriceNotAvailableException>();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenMarketPriceIsStale_ShouldThrowMarketPriceStaleException()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var position = new Position(
+            Guid.NewGuid(),
+            portfolioId,
+            instrumentId,
+            100,
+            1_000_000m,
+            10_000m,
+            0,
+            DateTimeOffset.UtcNow);
+
+        var positionRepository =
+            new FakePositionRepository();
+
+        positionRepository.Positions.Add(position);
+
+        var marketPriceRepository =
+            new FakeMarketPriceRepository();
+
+        var marketPrice =
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                12_000m,
+                DateTimeOffset.UtcNow,
+                "TEST");
+
+        marketPriceRepository.MarketPrices.Add(
+            marketPrice);
+
+        var freshnessPolicy =
+            new FakeMarketPriceFreshnessPolicy
+            {
+                IsFreshResult = false
+            };
+
+        var portfolio =
+            new Portfolio(
+                portfolioId,
+                userId,
+                "Test Portfolio");
+
+        var portfolioRepository =
+            new FakePortfolioRepository(portfolio);
+
+        var portfolioAccessService =
+            new FakePortfolioAccessService(
+                portfolioRepository);
+
+        var currentUserService =
+            new FakeCurrentUserService(userId);
+
+        var service =
+            new GetPositionValuationService(
+                positionRepository,
+                marketPriceRepository,
+                freshnessPolicy,
+                portfolioAccessService,
+                new ValuationCalculator(),
+                currentUserService);
+
+        var query =
+            new GetPositionValuationQuery(
+                portfolioId,
+                instrumentId);
+
+        var action =
+            () => service.ExecuteAsync(query);
+
+        await action.Should()
+            .ThrowAsync<MarketPriceStaleException>();
+    }
+
     private static GetPositionValuationService CreateService(
         Guid portfolioId,
         Guid userId,
@@ -340,9 +423,13 @@ public sealed class GetPositionValuationServiceTests
         var currentUserService =
             new FakeCurrentUserService(userId);
 
+        var marketPriceFreshnessPolicy =
+            new FakeMarketPriceFreshnessPolicy();
+
         return new GetPositionValuationService(
             positionRepository,
             marketPriceRepository,
+            marketPriceFreshnessPolicy,
             portfolioAccessService,
             new ValuationCalculator(),
             currentUserService);
