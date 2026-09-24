@@ -7,17 +7,20 @@ namespace TradeLens.Application.Valuation.Queries.GetPositionValuation;
 public sealed class GetPositionValuationService
 {
     private readonly IPositionRepository _positionRepository;
+    private readonly IMarketPriceRepository _marketPriceRepository;
     private readonly IPortfolioAccessService _portfolioAccessService;
     private readonly ValuationCalculator _valuationCalculator;
     private readonly ICurrentUserService _currentUserService;
 
     public GetPositionValuationService(
         IPositionRepository positionRepository,
+        IMarketPriceRepository marketPriceRepository,
         IPortfolioAccessService portfolioAccessService,
         ValuationCalculator valuationCalculator,
         ICurrentUserService currentUserService)
     {
         _positionRepository = positionRepository;
+        _marketPriceRepository = marketPriceRepository;
         _portfolioAccessService = portfolioAccessService;
         _valuationCalculator = valuationCalculator;
         _currentUserService = currentUserService;
@@ -44,11 +47,21 @@ public sealed class GetPositionValuationService
             throw new PositionNotFoundException();
         }
 
+        var marketPrice =
+            await _marketPriceRepository.GetLatestAsync(
+                query.InstrumentId,
+                cancellationToken);
+
+        if (marketPrice is null)
+        {
+            throw new MarketPriceNotAvailableException();
+        }
+
         var valuation =
             _valuationCalculator.Calculate(
                 position.Quantity,
                 position.CostBasis,
-                query.MarketPrice);
+                marketPrice.Price);
 
         return new GetPositionValuationResult(
             position.PortfolioId,
@@ -56,7 +69,7 @@ public sealed class GetPositionValuationService
             position.Quantity,
             position.CostBasis,
             position.AveragePrice,
-            query.MarketPrice,
+            marketPrice.Price,
             valuation.MarketValue,
             valuation.UnrealizedPnl,
             valuation.UnrealizedPnlPercentage);

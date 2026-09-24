@@ -31,17 +31,27 @@ public sealed class GetPositionValuationServiceTests
         var repository = new FakePositionRepository();
         repository.Positions.Add(position);
 
+        var marketPriceRepository = new FakeMarketPriceRepository();
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                12_000m,
+                DateTimeOffset.UtcNow,
+                "TEST"));
+
         var userId = Guid.NewGuid();
 
         var service = CreateService(
             portfolioId,
             userId,
-            repository);
+            repository,
+            marketPriceRepository);
 
         var query = new GetPositionValuationQuery(
             portfolioId,
-            instrumentId,
-            12_000m);
+            instrumentId);
 
         // Act
         var result = await service.ExecuteAsync(query);
@@ -68,15 +78,25 @@ public sealed class GetPositionValuationServiceTests
 
         var repository = new FakePositionRepository();
 
+        var marketPriceRepository = new FakeMarketPriceRepository();
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                12_000m,
+                DateTimeOffset.UtcNow,
+                "TEST"));
+
         var service = CreateService(
             portfolioId,
             userId,
-            repository);
+            repository,
+            marketPriceRepository);
 
         var query = new GetPositionValuationQuery(
             portfolioId,
-            instrumentId,
-            12_000m);
+            instrumentId);
 
         // Act
         var act = () => service.ExecuteAsync(query);
@@ -84,46 +104,6 @@ public sealed class GetPositionValuationServiceTests
         // Assert
         await act.Should()
             .ThrowAsync<PositionNotFoundException>();
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenMarketPriceIsNegative_ShouldThrowDomainException()
-    {
-        // Arrange
-        var portfolioId = Guid.NewGuid();
-        var instrumentId = Guid.NewGuid();
-
-        var position = new Position(
-            Guid.NewGuid(),
-            portfolioId,
-            instrumentId,
-            100,
-            1_000_000m,
-            10_000m,
-            0,
-            DateTimeOffset.UtcNow);
-
-        var repository = new FakePositionRepository();
-        repository.Positions.Add(position);
-
-        var userId = Guid.NewGuid();
-
-        var service = CreateService(
-            portfolioId,
-            userId,
-            repository);
-
-        var query = new GetPositionValuationQuery(
-            portfolioId,
-            instrumentId,
-            -1m);
-
-        // Act
-        var act = () => service.ExecuteAsync(query);
-
-        // Assert
-        await act.Should()
-            .ThrowAsync<DomainException>();
     }
 
     [Fact]
@@ -146,17 +126,27 @@ public sealed class GetPositionValuationServiceTests
         var repository = new FakePositionRepository();
         repository.Positions.Add(position);
 
+        var marketPriceRepository = new FakeMarketPriceRepository();
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                12_000m,
+                DateTimeOffset.UtcNow,
+                "TEST"));
+
         var userId = Guid.NewGuid();
 
         var service = CreateService(
             portfolioId,
             userId,
-            repository);
+            repository,
+            marketPriceRepository);
 
         var query = new GetPositionValuationQuery(
             portfolioId,
-            instrumentId,
-            12_000m);
+            instrumentId);
 
         // Act
         await service.ExecuteAsync(query);
@@ -190,6 +180,8 @@ public sealed class GetPositionValuationServiceTests
         var repository = new FakePositionRepository();
         repository.Positions.Add(position);
 
+        var marketPriceRepository = new FakeMarketPriceRepository();
+
         var portfolio = new Portfolio(
             portfolioId,
             ownerId,
@@ -206,14 +198,14 @@ public sealed class GetPositionValuationServiceTests
 
         var service = new GetPositionValuationService(
             repository,
+            marketPriceRepository,
             portfolioAccessService,
             new ValuationCalculator(),
             currentUserService);
 
         var query = new GetPositionValuationQuery(
             portfolioId,
-            instrumentId,
-            12_000m);
+            instrumentId);
 
         // Act
         var act = () => service.ExecuteAsync(query);
@@ -223,10 +215,116 @@ public sealed class GetPositionValuationServiceTests
             .ThrowAsync<PortfolioAccessDeniedException>();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenMultipleMarketPricesExist_ShouldUseLatestPrice()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+
+        var position = new Position(
+            Guid.NewGuid(),
+            portfolioId,
+            instrumentId,
+            100,
+            1_000_000m,
+            10_000m,
+            0,
+            DateTimeOffset.UtcNow);
+
+        var positionRepository = new FakePositionRepository();
+        positionRepository.Positions.Add(position);
+
+        var marketPriceRepository =
+            new FakeMarketPriceRepository();
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                11_000m,
+                DateTimeOffset.UtcNow.AddMinutes(-10),
+                "TEST"));
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                12_000m,
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                "TEST"));
+
+        marketPriceRepository.MarketPrices.Add(
+            new MarketPrice(
+                Guid.NewGuid(),
+                instrumentId,
+                13_000m,
+                DateTimeOffset.UtcNow,
+                "TEST"));
+
+        var userId = Guid.NewGuid();
+
+        var service = CreateService(
+            portfolioId,
+            userId,
+            positionRepository,
+            marketPriceRepository);
+
+        var query = new GetPositionValuationQuery(
+            portfolioId,
+            instrumentId);
+
+        var result = await service.ExecuteAsync(query);
+
+        result.MarketPrice.Should().Be(13_000m);
+        result.MarketValue.Should().Be(1_300_000m);
+        result.UnrealizedPnl.Should().Be(300_000m);
+        result.UnrealizedPnlPercentage.Should().Be(30m);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenMarketPriceIsNotAvailable_ShouldThrowMarketPriceNotAvailableException()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var position = new Position(
+            Guid.NewGuid(),
+            portfolioId,
+            instrumentId,
+            100,
+            1_000_000m,
+            10_000m,
+            0,
+            DateTimeOffset.UtcNow);
+
+        var positionRepository = new FakePositionRepository();
+        positionRepository.Positions.Add(position);
+
+        var marketPriceRepository =
+            new FakeMarketPriceRepository();
+
+        var service = CreateService(
+            portfolioId,
+            userId,
+            positionRepository,
+            marketPriceRepository);
+
+        var query = new GetPositionValuationQuery(
+            portfolioId,
+            instrumentId);
+
+        var action = () => service.ExecuteAsync(query);
+
+        await action.Should()
+            .ThrowAsync<MarketPriceNotAvailableException>();
+    }
+
     private static GetPositionValuationService CreateService(
         Guid portfolioId,
         Guid userId,
-        FakePositionRepository positionRepository)
+        FakePositionRepository positionRepository,
+        FakeMarketPriceRepository marketPriceRepository)
     {
         var portfolio = new Portfolio(
             portfolioId,
@@ -244,6 +342,7 @@ public sealed class GetPositionValuationServiceTests
 
         return new GetPositionValuationService(
             positionRepository,
+            marketPriceRepository,
             portfolioAccessService,
             new ValuationCalculator(),
             currentUserService);
