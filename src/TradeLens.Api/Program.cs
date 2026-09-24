@@ -19,6 +19,7 @@ using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Application.Validators;
 using TradeLens.Application.Valuation.Queries.GetPositionValuation;
 using TradeLens.Domain.Services;
+using TradeLens.Infrastructure.MarketPrices.YahooFinance;
 using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
 using TradeLens.Infrastructure.Repositories;
@@ -37,6 +38,32 @@ builder.Services
     .Bind(builder.Configuration.GetSection(
         MarketPriceOptions.SectionName))
     .ValidateOnStart();
+
+builder.Services
+    .AddOptions<YahooFinanceOptions>()
+    .Bind(builder.Configuration.GetSection(
+        YahooFinanceOptions.SectionName))
+    .Validate(
+        options => !string.IsNullOrWhiteSpace(options.BaseUrl),
+        "Yahoo Finance base URL is required.")
+    .ValidateOnStart();
+
+builder.Services.AddHttpClient(
+    "YahooFinance",
+    (serviceProvider, client) =>
+    {
+        var options =
+            serviceProvider
+                .GetRequiredService<
+                    IOptions<YahooFinanceOptions>>()
+                .Value;
+
+        client.BaseAddress =
+            new Uri(options.BaseUrl);
+
+        client.Timeout =
+            TimeSpan.FromSeconds(10);
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -58,6 +85,10 @@ builder.Services.AddValidatorsFromAssemblyContaining<
 
 builder.Services.AddScoped<MarketPriceSyncService>();
 builder.Services.AddScoped<IMarketPriceSyncJob, MarketPriceSyncJob>();
+
+builder.Services.AddScoped<
+    IMarketPriceProvider,
+    YahooFinanceMarketPriceProvider>();
 
 builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
