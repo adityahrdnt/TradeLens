@@ -8,6 +8,7 @@ public sealed class GetPositionValuationService
 {
     private readonly IPositionRepository _positionRepository;
     private readonly IMarketPriceRepository _marketPriceRepository;
+    private readonly IMarketPriceFreshnessPolicy _marketPriceFreshnessPolicy;
     private readonly IPortfolioAccessService _portfolioAccessService;
     private readonly ValuationCalculator _valuationCalculator;
     private readonly ICurrentUserService _currentUserService;
@@ -15,12 +16,14 @@ public sealed class GetPositionValuationService
     public GetPositionValuationService(
         IPositionRepository positionRepository,
         IMarketPriceRepository marketPriceRepository,
+        IMarketPriceFreshnessPolicy marketPriceFreshnessPolicy,
         IPortfolioAccessService portfolioAccessService,
         ValuationCalculator valuationCalculator,
         ICurrentUserService currentUserService)
     {
         _positionRepository = positionRepository;
         _marketPriceRepository = marketPriceRepository;
+        _marketPriceFreshnessPolicy = marketPriceFreshnessPolicy;
         _portfolioAccessService = portfolioAccessService;
         _valuationCalculator = valuationCalculator;
         _currentUserService = currentUserService;
@@ -55,6 +58,13 @@ public sealed class GetPositionValuationService
         if (marketPrice is null)
         {
             throw new MarketPriceNotAvailableException();
+        }
+
+        if (!_marketPriceFreshnessPolicy.IsFresh(
+                marketPrice,
+                DateTimeOffset.UtcNow))
+        {
+            throw new MarketPriceStaleException();
         }
 
         var valuation =

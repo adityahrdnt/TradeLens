@@ -37,6 +37,12 @@ builder.Services
     .AddOptions<MarketPriceOptions>()
     .Bind(builder.Configuration.GetSection(
         MarketPriceOptions.SectionName))
+    .Validate(
+        options => options.SyncIntervalMinutes > 0,
+        "Market price sync interval must be greater than zero.")
+    .Validate(
+        options => options.MaxAgeMinutes > 0,
+        "Market price maximum age must be greater than zero.")
     .ValidateOnStart();
 
 builder.Services
@@ -86,6 +92,21 @@ builder.Services.AddValidatorsFromAssemblyContaining<
     AddTransactionCommandValidator>();
 
 builder.Services.AddScoped<MarketPriceSyncService>();
+
+builder.Services.AddScoped<IMarketPriceFreshnessPolicy>(
+    serviceProvider =>
+    {
+        var options =
+            serviceProvider
+                .GetRequiredService<
+                    IOptions<MarketPriceOptions>>()
+                .Value;
+
+        return new MarketPriceFreshnessPolicy(
+            TimeSpan.FromMinutes(
+                options.MaxAgeMinutes));
+    });
+
 builder.Services.AddScoped<IMarketPriceSyncJob, MarketPriceSyncJob>();
 
 builder.Services.AddScoped<

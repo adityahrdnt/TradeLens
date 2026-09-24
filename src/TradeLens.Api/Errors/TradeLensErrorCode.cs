@@ -7,6 +7,7 @@ public static class TradeLensErrorCode
     public const string TransactionNotFound = "TRANSACTION_NOT_FOUND";
     public const string TransactionConflict = "TRANSACTION_CONFLICT";
     public const string MarketPriceNotAvailable = "MARKET_PRICE_NOT_AVAILABLE";
+    public const string MarketPriceStale = "MARKET_PRICE_STALE";
 
     public const string PositionInsufficientQuantity =
         "POSITION_INSUFFICIENT_QUANTITY";

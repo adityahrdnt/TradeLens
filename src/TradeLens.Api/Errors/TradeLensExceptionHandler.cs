@@ -44,7 +44,14 @@ public sealed class TradeLensExceptionHandler
                     StatusCodes.Status400BadRequest,
                     TradeLensErrorCode.MarketPriceNotAvailable,
                     "Market Price Not Available"
-                ),  
+                ),
+
+            MarketPriceStaleException =>
+                (
+                    StatusCodes.Status400BadRequest,
+                    TradeLensErrorCode.MarketPriceStale,
+                    "Market Price Stale"
+                ),
 
             TransactionNotFoundException =>
                 (
