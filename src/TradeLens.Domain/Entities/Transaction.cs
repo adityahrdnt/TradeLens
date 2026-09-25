@@ -128,6 +128,20 @@ public class Transaction
         CorrectionReason = reason.Trim();
     }
 
+    public void Void(string reason)
+    {
+        if (Status != TransactionStatus.Active)
+            throw new DomainException(
+                "Only an active transaction can be voided.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException(
+                "Void reason is required.");
+
+        Status = TransactionStatus.Voided;
+        VoidReason = reason.Trim();
+    }
+
     public static Transaction CreateCorrection(
         Guid id,
         Transaction original,

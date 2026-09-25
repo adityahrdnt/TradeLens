@@ -215,4 +215,122 @@ public class IdempotencyApiTests
         Assert.Single(transactions);
         Assert.Single(idempotencyRecords);
     }
+
+    [Fact]
+    public async Task PostTransaction_WithSameIdempotencyKeySequentially_ShouldReturnSameResult()
+    {
+        // Arrange
+        await using var factory = new CustomWebApplicationFactory();
+
+        await factory.SeedAsync();
+
+        var client = factory.CreateClient();
+
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var transactionDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var idempotencyKey = Guid.NewGuid().ToString();
+
+        var request = new
+        {
+            portfolioId = CustomWebApplicationFactory.TestPortfolioId,
+            brokerAccountId,
+            instrumentId,
+            type = "Buy",
+            quantity = 100,
+            price = 10000m,
+            fee = 100000m,
+            transactionDate,
+            sequence = 1
+        };
+
+        using var httpRequest1 = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        httpRequest1.Headers.Add(
+            "Idempotency-Key",
+            idempotencyKey);
+
+        // Act - first request
+        var response1 = await client.SendAsync(httpRequest1);
+
+        using var httpRequest2 = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(request)
+        };
+
+        httpRequest2.Headers.Add(
+            "Idempotency-Key",
+            idempotencyKey);
+
+        // Act - replay
+        var response2 = await client.SendAsync(httpRequest2);
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.Created,
+            response1.StatusCode);
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            response2.StatusCode);
+
+        var result1 = await response1.Content
+            .ReadFromJsonAsync<AddTransactionResponse>();
+
+        var result2 = await response2.Content
+            .ReadFromJsonAsync<AddTransactionResponse>();
+
+        Assert.NotNull(result1);
+        Assert.NotNull(result2);
+
+        Assert.Equal(
+            result1!.TransactionId,
+            result2!.TransactionId);
+
+        Assert.Equal(
+            result1.PositionId,
+            result2.PositionId);
+
+        Assert.Equal(
+            result1.PositionQuantity,
+            result2.PositionQuantity);
+
+        Assert.Equal(
+            result1.PositionCostBasis,
+            result2.PositionCostBasis);
+
+        Assert.Equal(
+            result1.PositionAveragePrice,
+            result2.PositionAveragePrice);
+
+        // Verify database
+        using var scope = factory.Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<TradeLensDbContext>();
+
+        var transactions = await dbContext.Transactions
+            .Where(x =>
+                x.PortfolioId ==
+                    CustomWebApplicationFactory.TestPortfolioId &&
+                x.InstrumentId == instrumentId)
+            .ToListAsync();
+
+        var idempotencyRecords = await dbContext.IdempotencyRecords
+            .Where(x =>
+                x.UserId ==
+                    CustomWebApplicationFactory.TestUserId &&
+                x.IdempotencyKey == idempotencyKey)
+            .ToListAsync();
+
+        Assert.Single(transactions);
+        Assert.Single(idempotencyRecords);
+    }
 }

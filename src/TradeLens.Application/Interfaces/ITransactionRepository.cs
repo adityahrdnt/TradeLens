@@ -16,4 +16,14 @@ public interface ITransactionRepository
         Guid portfolioId,
         Guid instrumentId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Transaction>> GetByPortfolioAsync(
+        Guid portfolioId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default);
 }

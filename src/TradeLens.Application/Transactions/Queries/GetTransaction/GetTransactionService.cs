@@ -53,6 +53,7 @@ public sealed class GetTransactionService
             transaction.CreatedBy,
             transaction.CreatedAt,
             transaction.SupersedesTransactionId,
-            transaction.CorrectionReason);
+            transaction.CorrectionReason,
+            transaction.VoidReason);
     }
 }

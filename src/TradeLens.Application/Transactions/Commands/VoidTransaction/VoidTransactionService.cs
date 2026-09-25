@@ -3,9 +3,9 @@ using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
 using TradeLens.Domain.Services;
 
-namespace TradeLens.Application.Transactions.Commands.CorrectTransaction;
+namespace TradeLens.Application.Transactions.Commands.VoidTransaction;
 
-public sealed class CorrectTransactionService
+public sealed class VoidTransactionService
 {
     private readonly ITransactionRepository _transactionRepository;
     private readonly IPositionRepository _positionRepository;
@@ -13,7 +13,7 @@ public sealed class CorrectTransactionService
     private readonly IUnitOfWork _unitOfWork;
     private readonly PositionCalculator _positionCalculator;
 
-    public CorrectTransactionService(
+    public VoidTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
         IPortfolioAccessService portfolioAccessService,
@@ -27,20 +27,24 @@ public sealed class CorrectTransactionService
         _positionCalculator = positionCalculator;
     }
 
-    public async Task<CorrectTransactionResult> ExecuteAsync(
-        CorrectTransactionCommand command,
+    public async Task<VoidTransactionResult> ExecuteAsync(
+        VoidTransactionCommand command,
         CancellationToken cancellationToken = default)
     {
-        var original = await _transactionRepository.GetByIdAsync(
-            command.TransactionId,
-            cancellationToken);
+        var transaction =
+            await _transactionRepository.GetByIdAsync(
+                command.TransactionId,
+                cancellationToken);
 
-        if (original is null)
-            throw new TransactionNotFoundException(command.TransactionId);
+        if (transaction is null)
+        {
+            throw new TransactionNotFoundException(
+                command.TransactionId);
+        }
 
         await _portfolioAccessService.GetOwnedPortfolioAsync(
-            original.PortfolioId,
-            command.CorrectedBy,
+            transaction.PortfolioId,
+            command.VoidedBy,
             cancellationToken);
 
         return await _unitOfWork.ExecuteInTransactionAsync(
@@ -48,53 +52,31 @@ public sealed class CorrectTransactionService
             {
                 var now = DateTimeOffset.UtcNow;
 
-                var corrected = Transaction.CreateCorrection(
-                    Guid.NewGuid(),
-                    original,
-                    command.Quantity,
-                    command.Price,
-                    command.Fee,
-                    command.TransactionDate,
-                    command.Sequence,
-                    command.CorrectedBy,
-                    now,
-                    command.Reason);
-
-                original.Supersede(
-                    now,
-                    command.CorrectedBy,
-                    command.Reason);
+                transaction.Void(command.Reason);
 
                 var effectiveTransactions =
                     await _transactionRepository
                         .GetEffectiveTransactionsAsync(
-                            original.PortfolioId,
-                            original.InstrumentId,
+                            transaction.PortfolioId,
+                            transaction.InstrumentId,
                             transactionCancellationToken);
 
-                var transactions = effectiveTransactions
-                    .Append(corrected)
-                    .ToList();
-
                 var calculation =
-                    _positionCalculator.Calculate(transactions);
-
-                await _transactionRepository.AddAsync(
-                    corrected,
-                    transactionCancellationToken);
+                    _positionCalculator.Calculate(
+                        effectiveTransactions);
 
                 var position =
                     await _positionRepository
                         .GetByPortfolioAndInstrumentAsync(
-                            original.PortfolioId,
-                            original.InstrumentId,
+                            transaction.PortfolioId,
+                            transaction.InstrumentId,
                             transactionCancellationToken);
 
                 if (position is null)
                 {
                     position = Position.Empty(
-                        original.PortfolioId,
-                        original.InstrumentId,
+                        transaction.PortfolioId,
+                        transaction.InstrumentId,
                         now);
 
                     position.Apply(
@@ -121,9 +103,8 @@ public sealed class CorrectTransactionService
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
 
-                return new CorrectTransactionResult(
-                    original.Id,
-                    corrected.Id,
+                return new VoidTransactionResult(
+                    transaction.Id,
                     position.Id,
                     position.Quantity,
                     position.CostBasis,
