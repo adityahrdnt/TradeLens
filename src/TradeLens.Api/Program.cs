@@ -15,6 +15,7 @@ using TradeLens.Application.MarketPrices;
 using TradeLens.Application.Services;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
+using TradeLens.Application.Transactions.Commands.VoidTransaction;
 using TradeLens.Application.Transactions.Queries.GetPortfolioTransactions;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Application.Validators;
@@ -117,6 +118,7 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<AddTransactionService>();
 builder.Services.AddScoped<CorrectTransactionService>();
+builder.Services.AddScoped<VoidTransactionService>();
 builder.Services.AddScoped<GetTransactionService>();
 builder.Services.AddScoped<GetPortfolioTransactionsService>();
 builder.Services.AddScoped<PositionCalculator>();

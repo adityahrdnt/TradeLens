@@ -7,6 +7,7 @@ using TradeLens.Application.Interfaces;
 using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
+using TradeLens.Application.Transactions.Commands.VoidTransaction;
 
 namespace TradeLens.Api.Controllers;
 
@@ -17,25 +18,31 @@ public sealed class TransactionsController : ControllerBase
 {
     private readonly AddTransactionService _addTransactionService;
     private readonly CorrectTransactionService _correctTransactionService;
+    private readonly VoidTransactionService _voidTransactionService;
     private readonly GetTransactionService _getTransactionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<AddTransactionCommand> _validator;
     private readonly IValidator<CorrectTransactionCommand> _correctTransactionValidator;
+    private readonly IValidator<VoidTransactionCommand> _voidTransactionValidator;
 
     public TransactionsController(
         AddTransactionService addTransactionService,
         CorrectTransactionService correctTransactionService,
+        VoidTransactionService voidTransactionService,
         GetTransactionService getTransactionService,
         ICurrentUserService currentUserService,
         IValidator<AddTransactionCommand> validator,
-        IValidator<CorrectTransactionCommand> correctTransactionValidator)
+        IValidator<CorrectTransactionCommand> correctTransactionValidator,
+        IValidator<VoidTransactionCommand> voidTransactionValidator)
     {
         _addTransactionService = addTransactionService;
         _correctTransactionService = correctTransactionService;
+        _voidTransactionService = voidTransactionService;
         _getTransactionService = getTransactionService;
         _currentUserService = currentUserService;
         _validator = validator;
         _correctTransactionValidator = correctTransactionValidator;
+        _voidTransactionValidator = voidTransactionValidator;
     }
 
     [HttpPost]
@@ -134,6 +141,42 @@ public sealed class TransactionsController : ControllerBase
         var response = new CorrectTransactionResponse(
             result.OriginalTransactionId,
             result.CorrectedTransactionId,
+            result.PositionId,
+            result.PositionQuantity,
+            result.PositionCostBasis,
+            result.PositionAveragePrice);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/void")]
+    public async Task<ActionResult<VoidTransactionResponse>> Void(
+        Guid id,
+        [FromBody] VoidTransactionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new VoidTransactionCommand(
+            id,
+            _currentUserService.UserId,
+            request.Reason);
+
+        var validationResult =
+            await _voidTransactionValidator.ValidateAsync(
+                command,
+                cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        var result =
+            await _voidTransactionService.ExecuteAsync(
+                command,
+                cancellationToken);
+
+        var response = new VoidTransactionResponse(
+            result.TransactionId,
             result.PositionId,
             result.PositionQuantity,
             result.PositionCostBasis,

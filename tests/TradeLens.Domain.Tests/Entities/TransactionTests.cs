@@ -164,4 +164,47 @@ public class TransactionTests
         // Assert
         act.Should().Throw<DomainException>();
     }
+
+    [Fact]
+    public void Void_WhenTransactionIsActive_ShouldMarkAsVoided()
+    {
+        // Arrange
+        var transaction = CreateTransaction();
+
+        // Act
+        transaction.Void("Transaction entered by mistake");
+
+        // Assert
+        transaction.Status.Should().Be(TransactionStatus.Voided);
+        transaction.VoidReason.Should().Be(
+            "Transaction entered by mistake");
+    }
+
+    [Fact]
+    public void Void_WhenTransactionIsAlreadyVoided_ShouldThrow()
+    {
+        // Arrange
+        var transaction = CreateTransaction();
+
+        transaction.Void("First void");
+
+        // Act
+        var act = () => transaction.Void("Second void");
+
+        // Assert
+        act.Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void Void_WhenReasonIsEmpty_ShouldThrow()
+    {
+        // Arrange
+        var transaction = CreateTransaction();
+
+        // Act
+        var act = () => transaction.Void("");
+
+        // Assert
+        act.Should().Throw<DomainException>();
+    }
 }
