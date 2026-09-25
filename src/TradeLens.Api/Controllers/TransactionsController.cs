@@ -20,19 +20,22 @@ public sealed class TransactionsController : ControllerBase
     private readonly GetTransactionService _getTransactionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<AddTransactionCommand> _validator;
+    private readonly IValidator<CorrectTransactionCommand> _correctTransactionValidator;
 
     public TransactionsController(
         AddTransactionService addTransactionService,
         CorrectTransactionService correctTransactionService,
         GetTransactionService getTransactionService,
         ICurrentUserService currentUserService,
-        IValidator<AddTransactionCommand> validator)
+        IValidator<AddTransactionCommand> validator,
+        IValidator<CorrectTransactionCommand> correctTransactionValidator)
     {
         _addTransactionService = addTransactionService;
         _correctTransactionService = correctTransactionService;
         _getTransactionService = getTransactionService;
         _currentUserService = currentUserService;
         _validator = validator;
+        _correctTransactionValidator = correctTransactionValidator;
     }
 
     [HttpPost]
@@ -113,6 +116,16 @@ public sealed class TransactionsController : ControllerBase
             request.Sequence,
             _currentUserService.UserId,
             request.Reason);
+
+        var validationResult =
+            await _correctTransactionValidator.ValidateAsync(
+                command,
+                cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
 
         var result = await _correctTransactionService.ExecuteAsync(
             command,

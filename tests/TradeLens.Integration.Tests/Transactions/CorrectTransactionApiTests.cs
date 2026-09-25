@@ -204,4 +204,74 @@ public class CorrectTransactionApiTests
             position.AveragePrice);
     }
 
+    [Fact]
+    public async Task CorrectTransaction_WhenQuantityIsZero_ShouldReturnBadRequest()
+    {
+        // Arrange
+        await using var factory = new CustomWebApplicationFactory();
+
+        await factory.SeedAsync();
+
+        using var client = factory.CreateClient();
+
+        var brokerAccountId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var transactionDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var originalRequest = new
+        {
+            portfolioId = CustomWebApplicationFactory.TestPortfolioId,
+            brokerAccountId,
+            instrumentId,
+            type = "Buy",
+            quantity = 100,
+            price = 10000m,
+            fee = 100000m,
+            transactionDate,
+            sequence = 1
+        };
+
+        using var httpRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/api/v1/transactions")
+        {
+            Content = JsonContent.Create(originalRequest)
+        };
+
+        httpRequest.Headers.Add(
+            "Idempotency-Key",
+            Guid.NewGuid().ToString());
+
+        var postResponse = await client.SendAsync(httpRequest);
+
+        var originalResult =
+            await postResponse.Content
+                .ReadFromJsonAsync<AddTransactionResponse>();
+
+        Assert.Equal(
+            HttpStatusCode.Created,
+            postResponse.StatusCode);
+
+        Assert.NotNull(originalResult);
+
+        var correctionRequest = new
+        {
+            quantity = 0,
+            price = 10000m,
+            fee = 100000m,
+            transactionDate,
+            sequence = 2,
+            reason = "Invalid quantity"
+        };
+
+        // Act
+        var correctionResponse = await client.PostAsJsonAsync(
+            $"/api/v1/transactions/{originalResult!.TransactionId}/correction",
+            correctionRequest);
+
+        // Assert
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            correctionResponse.StatusCode);
+    }
 }
