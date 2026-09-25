@@ -9,6 +9,10 @@ public interface IPositionRepository
         Guid instrumentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<Position>> GetByPortfolioAsync(
+    Guid portfolioId,
+    CancellationToken cancellationToken = default);
+
     Task AddAsync(
         Position position,
         CancellationToken cancellationToken = default);

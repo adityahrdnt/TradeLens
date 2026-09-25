@@ -17,6 +17,7 @@ using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
 using TradeLens.Application.Transactions.Queries.GetTransaction;
 using TradeLens.Application.Validators;
+using TradeLens.Application.Valuation.Queries.GetPortfolioValuation;
 using TradeLens.Application.Valuation.Queries.GetPositionValuation;
 using TradeLens.Domain.Services;
 using TradeLens.Infrastructure.MarketPrices.YahooFinance;
@@ -119,6 +120,7 @@ builder.Services.AddScoped<GetTransactionService>();
 builder.Services.AddScoped<PositionCalculator>();
 builder.Services.AddScoped<ValuationCalculator>();
 builder.Services.AddScoped<GetPositionValuationService>();
+builder.Services.AddScoped<GetPortfolioValuationService>();
 
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
