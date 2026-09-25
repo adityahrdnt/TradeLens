@@ -19,6 +19,18 @@ public sealed class FakePositionRepository : IPositionRepository
             return Task.FromResult(position);
         }
 
+        public Task<IReadOnlyCollection<Position>> GetByPortfolioAsync(
+            Guid portfolioId,
+            CancellationToken cancellationToken = default)
+        {
+            var positions = Positions
+                .Where(x => x.PortfolioId == portfolioId)
+                .ToList();
+
+            return Task.FromResult<IReadOnlyCollection<Position>>(
+                positions);
+        }
+
         public Task AddAsync(
             Position position,
             CancellationToken cancellationToken = default)

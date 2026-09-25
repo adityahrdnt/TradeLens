@@ -27,6 +27,15 @@ public class PositionRepository : IPositionRepository
                 cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Position>> GetByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Positions
+            .Where(x => x.PortfolioId == portfolioId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(
         Position position,
         CancellationToken cancellationToken = default)

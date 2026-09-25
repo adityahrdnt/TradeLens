@@ -4,9 +4,9 @@
 
 TradeLens is a portfolio and P&L analytics platform for retail investors, designed to track stock transactions, calculate portfolio positions, and analyze realized and unrealized profit and loss.
 
-TradeLens is an **analytics and portfolio tracking platform, not a trading execution system**.
+TradeLens is an --analytics and portfolio tracking platform, not a trading execution system--.
 
-The project is also designed as a practical demonstration of enterprise software engineering practices, including domain-driven design, layered architecture, transactional consistency, validation, error handling, security, testing, and production-readiness considerations.
+The project is also designed as a practical demonstration of enterprise software engineering practices, including domain-driven design, layered architecture, transactional consistency, validation, error handling, security, resilience, testing, and production-readiness considerations.
 
 ---
 
@@ -20,7 +20,7 @@ Retail investors often maintain transaction records across multiple broker accou
 - Realized profit and loss
 - Unrealized profit and loss
 - Historical transaction changes
-- Portfolio valuation
+- Current portfolio valuation
 
 TradeLens provides a domain-oriented application model for maintaining this information while keeping transaction history as the source of truth.
 
@@ -39,6 +39,9 @@ TradeLens provides a domain-oriented application model for maintaining this info
 - Maintain transactional consistency
 - Provide consistent API error contracts
 - Support authentication and authorization
+- Support market price integration
+- Validate market price freshness
+- Provide portfolio-level valuation
 - Demonstrate layered architecture and DDD principles
 - Provide automated tests
 - Provide a foundation for production-ready observability and operations
@@ -51,6 +54,7 @@ TradeLens provides a domain-oriented application model for maintaining this info
 
 - [x] Transaction domain model
 - [x] Position and P&L calculation
+- [x] Weighted-average cost basis
 - [x] PostgreSQL persistence
 - [x] Entity Framework Core
 - [x] Repository abstraction
@@ -63,13 +67,19 @@ TradeLens provides a domain-oriented application model for maintaining this info
 - [x] Idempotency
 - [x] Optimistic concurrency
 - [x] Portfolio valuation
+- [x] Portfolio-level valuation aggregation
+- [x] Position-level valuation
 - [x] Portfolio ownership authorization
 - [x] Development authentication
 - [x] Production JWT Bearer authentication
 - [x] Global exception handling
 - [x] Standardized API error contract
 - [x] Market price integration foundation
+- [x] External market price provider
 - [x] Background market price synchronization
+- [x] Market price freshness validation
+- [x] Partial portfolio valuation handling
+- [x] HTTP resilience and retry handling
 - [x] Domain, application, and integration tests
 
 ---
@@ -110,7 +120,7 @@ TradeLens uses a layered architecture with DDD principles.
 └──────────────────────────────┘
 ```
 
-Dependency direction:
+### Dependency Direction
 
 ```text
 TradeLens.Api
@@ -146,9 +156,11 @@ TradeLens currently uses:
 - Unit of Work Pattern
 - Domain Services
 - Lightweight CQRS-style separation between commands and queries
-- DTOs for API boundaries
+- DTOs and records for API boundaries
 - Optimistic concurrency
+- Idempotency
 - Problem Details-based API error contract
+- HTTP resilience
 
 The project intentionally avoids unnecessary abstractions and infrastructure such as:
 
@@ -161,7 +173,7 @@ The project intentionally avoids unnecessary abstractions and infrastructure suc
 - Kafka
 - Redis
 
-These technologies may be considered when the actual system requirements justify their introduction.
+These technologies may be considered when actual system requirements justify their introduction.
 
 ### Authorization
 
@@ -173,6 +185,8 @@ Unauthorized portfolio access returns:
 
 - `403 Forbidden`
 - Error code: `PORTFOLIO_ACCESS_DENIED`
+
+Portfolio ownership authorization is enforced across protected portfolio-related use cases, including transaction operations and portfolio valuation.
 
 ---
 
@@ -200,11 +214,15 @@ Portfolio Valuation
 
 ### Transaction History
 
-Transaction history is the **source of truth** for portfolio ownership and cost-basis calculation.
+Transaction history is the --source of truth-- for portfolio ownership and cost-basis calculation.
+
+Transactions represent historical business events rather than the current materialized state of a position.
 
 ### Position
 
 Position represents the derived/materialized current state of an instrument within a portfolio.
+
+A position can be recalculated from transaction history when historical transactions change.
 
 ### Cost Basis
 
@@ -235,6 +253,195 @@ Sequence
 
 ---
 
+## Market Price Model
+
+Market price is modeled independently from position ownership and cost basis.
+
+```text
+Instrument
+├── Id
+├── Symbol
+├── Name
+└── Currency
+       │
+       │ 1:N
+       ▼
+MarketPrice
+├── Id
+├── InstrumentId
+├── Price
+├── PriceTimestamp
+└── Source
+```
+
+Market price represents an external market-data observation.
+
+It does not modify:
+
+- Position quantity
+- Cost basis
+- Average acquisition price
+- Historical transaction records
+
+This separation allows market prices to change independently from portfolio ownership.
+
+---
+
+## Portfolio Valuation
+
+TradeLens supports both position-level and portfolio-level valuation.
+
+### Position Valuation
+
+Position valuation calculates:
+
+- Current quantity
+- Cost basis
+- Average price
+- Market price
+- Market value
+- Unrealized P&L
+- Unrealized P&L percentage
+
+Endpoint:
+
+```text
+GET /api/v1/portfolios/{portfolioId}/positions/{instrumentId}/valuation
+```
+
+A missing or stale market price results in a `400 Bad Request` for single-position valuation because a reliable valuation cannot be produced for that position.
+
+### Portfolio Valuation
+
+Portfolio valuation aggregates all current positions within a portfolio.
+
+Endpoint:
+
+```text
+GET /api/v1/portfolios/{portfolioId}/valuation
+```
+
+The response contains:
+
+- Portfolio status
+- Total cost basis
+- Total market value
+- Total unrealized P&L
+- Total unrealized P&L percentage
+- Per-position valuation results
+- Per-position market price status
+
+### Portfolio Valuation Status
+
+Portfolio valuation supports two states:
+
+```text
+COMPLETE
+PARTIAL
+```
+
+`COMPLETE` is returned when every position has a fresh market price.
+
+`PARTIAL` is returned when one or more positions have either:
+
+- No market price
+- A stale market price
+
+For partial valuation:
+
+- Total cost basis remains available.
+- Per-position results with fresh prices remain available.
+- Positions with missing or stale prices contain nullable valuation fields.
+- Portfolio-level market value and P&L totals are returned as `null`.
+
+This prevents incomplete partial sums from being presented as a complete portfolio valuation.
+
+### Market Price Status
+
+Each portfolio position valuation contains one of:
+
+```text
+FRESH
+STALE
+NOT_AVAILABLE
+```
+
+The same reference time is used for all freshness checks during a single portfolio valuation request.
+
+Portfolio-level unrealized P&L percentage is calculated from total portfolio cost basis:
+
+```text
+Total Unrealized P&L
+-------------------- × 100
+Total Cost Basis
+```
+
+It is not calculated as the arithmetic average of individual position percentages.
+
+---
+
+## Market Price Integration
+
+TradeLens uses an abstraction-based market price provider architecture so that market data sources can be replaced without changing application-level business logic.
+
+```text
+                    IMarketPriceProvider
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+YahooFinanceMarketPriceProvider    IdxMarketPriceProvider
+       Development / Demo                 Future
+```
+
+The current Yahoo Finance provider is intended for development and demonstration purposes. It should not be considered a production commercial market-data source without verifying the applicable licensing and usage terms.
+
+The application layer depends only on `IMarketPriceProvider`, keeping the domain and application layers independent from the external market-data source.
+
+### Market Price Synchronization
+
+Market prices are synchronized through:
+
+```text
+IMarketPriceProvider
+        ↓
+MarketPriceSyncService
+        ↓
+MarketPriceRepository
+        ↓
+PostgreSQL
+```
+
+A background service periodically triggers synchronization.
+
+Current development configuration:
+
+```text
+Sync interval: 5 minutes
+Maximum market price age: 30 minutes
+```
+
+The freshness threshold is configurable and enforced at the application layer.
+
+### HTTP Resilience
+
+The Yahoo Finance HTTP client uses the standard .NET resilience handler for transient HTTP failures, including retry behavior.
+
+Example scenario covered by integration tests:
+
+```text
+HTTP 503
+   ↓ retry
+HTTP 503
+   ↓ retry
+HTTP 200
+   ↓
+Market price successfully retrieved
+```
+
+Provider failures for individual symbols are handled without preventing other symbols from being processed.
+
+---
+
 ## API
 
 Base path:
@@ -253,6 +460,8 @@ GET  /api/v1/transactions/{id}
 POST /api/v1/transactions/{id}/corrections
 
 GET  /api/v1/portfolios/{portfolioId}/positions/{instrumentId}/valuation
+
+GET  /api/v1/portfolios/{portfolioId}/valuation
 ```
 
 ### Planned
@@ -288,16 +497,18 @@ Example:
 
 Common error categories:
 
-| Category | HTTP Status | Example Code |
-|---|---:|---|
-| Validation | 400 | `VALIDATION_ERROR` |
-| Business Rule | 400 | `POSITION_INSUFFICIENT_QUANTITY` |
-| Authentication | 401 | `AUTHENTICATION_REQUIRED` |
-| Authorization | 403 | `PORTFOLIO_ACCESS_DENIED` |
-| Not Found | 404 | `TRANSACTION_NOT_FOUND` |
-| Conflict | 409 | `TRANSACTION_CONFLICT` |
-| Concurrency | 409 | `POSITION_CONCURRENCY_CONFLICT` |
-| Unexpected Error | 500 | `INTERNAL_ERROR` |
+| Category         | HTTP Status | Example Code                     |
+| ---------------- | ----------: | -------------------------------- |
+| Validation       |         400 | `VALIDATION_ERROR`               |
+| Business Rule    |         400 | `POSITION_INSUFFICIENT_QUANTITY` |
+| Market Price     |         400 | `MARKET_PRICE_NOT_AVAILABLE`     |
+| Market Price     |         400 | `MARKET_PRICE_STALE`             |
+| Authentication   |         401 | `AUTHENTICATION_REQUIRED`        |
+| Authorization    |         403 | `PORTFOLIO_ACCESS_DENIED`        |
+| Not Found        |         404 | `TRANSACTION_NOT_FOUND`          |
+| Conflict         |         409 | `TRANSACTION_CONFLICT`           |
+| Concurrency      |         409 | `POSITION_CONCURRENCY_CONFLICT`  |
+| Unexpected Error |         500 | `INTERNAL_ERROR`                 |
 
 The API uses stable machine-readable error codes so clients do not need to parse human-readable error messages.
 
@@ -316,36 +527,51 @@ The API uses stable machine-readable error codes so clients do not need to parse
 - FluentAssertions
 - FluentValidation
 - Swagger / OpenAPI
+- JWT Bearer Authentication
 
 ---
 
-## Market Price Integration
+## Reliability and Security
 
-TradeLens uses an abstraction-based market price provider architecture so that market data sources can be replaced without changing application-level business logic.
+TradeLens includes several reliability and security mechanisms.
 
-```text
-                    IMarketPriceProvider
-                           │
-             ┌─────────────┴─────────────┐
-             ▼                           ▼
-YahooFinanceMarketPriceProvider    IdxMarketPriceProvider
-       Development / Demo                Future
-```
+### Idempotency
 
-The current Yahoo Finance provider is intended for development and demonstration purposes. It should not be considered a production commercial market-data source without verifying the applicable licensing and usage terms.
+Transaction creation supports idempotency through:
 
-The HTTP client uses the standard .NET resilience handler for transient HTTP failures, including retry behavior.
+- `Idempotency-Key`
+- Request hash validation
+- Unique database constraint
+- Atomic idempotency persistence
+- Concurrent duplicate request handling
+- Idempotency conflict detection
 
-Example retry scenario covered by integration tests:
-HTTP 503
-   ↓ retry
-HTTP 503
-   ↓ retry
-HTTP 200
-   ↓
-Market price successfully retrieved
+The idempotency record and business transaction are persisted atomically.
 
-The application layer depends only on IMarketPriceProvider, keeping the domain and application layers independent from the external market-data source.
+### Optimistic Concurrency
+
+Positions use an EF Core concurrency token.
+
+Concurrent updates are detected and mapped to an application-level concurrency exception and HTTP `409 Conflict`.
+
+### Authentication
+
+The application supports:
+
+- Development authentication for local testing
+- Production JWT Bearer authentication
+- JWT issuer validation
+- JWT audience validation
+- JWT signing-key validation
+- JWT lifetime validation
+
+Invalid JWTs result in `401 Unauthorized`.
+
+A valid authenticated user attempting to access another user's portfolio receives `403 Forbidden`.
+
+### HTTP Resilience
+
+External market price requests use standard .NET HTTP resilience capabilities to handle transient failures.
 
 ---
 
@@ -353,6 +579,7 @@ The application layer depends only on IMarketPriceProvider, keeping the domain a
 
 ```text
 TradeLens/
+
 ├── src/
 │   ├── TradeLens.Api/
 │   ├── TradeLens.Application/
@@ -395,7 +622,7 @@ cd TradeLens
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-### Restore dependencies
+### Restore Dependencies
 
 ```bash
 dotnet restore
@@ -407,7 +634,7 @@ dotnet restore
 dotnet build
 ```
 
-### Apply database migrations
+### Apply Database Migrations
 
 ```bash
 dotnet ef database update
@@ -450,7 +677,7 @@ Run all tests:
 dotnet test
 ```
 
-Current automated tests cover:
+The automated test suite currently covers:
 
 - Domain transaction rules
 - Position calculations
@@ -459,11 +686,17 @@ Current automated tests cover:
 - Transaction correction
 - Validation behavior
 - Oversell business rules
-- Idempotency and concurrent duplicate requests
+- Idempotency
+- Concurrent duplicate requests
 - Optimistic concurrency
 - Portfolio ownership authorization
 - JWT authentication
-- Portfolio valuation
+- Position valuation
+- Portfolio-level valuation
+- Complete portfolio valuation
+- Partial portfolio valuation
+- Missing market price handling
+- Stale market price handling
 - Market price persistence
 - Market price synchronization
 - External market price provider mapping
@@ -472,13 +705,17 @@ Current automated tests cover:
 - API integration
 - PostgreSQL integration
 
-The full solution test suite is currently passing.
+### Current Test Suite
 
-Current test suite:
-- Domain: 29 tests
-- Application: 43 tests
-- Integration: 25 tests
-- Total: 97 tests
+```text
+Domain:       29 tests
+Application:  56 tests
+Integration:  30 tests
+------------------------
+Total:       115 tests
+```
+
+The full solution test suite is currently passing.
 
 ---
 
@@ -492,31 +729,76 @@ PostgreSQL provides strong relational consistency and is sufficient for the tran
 
 Repositories provide business-oriented persistence abstractions and prevent the Application and Domain layers from depending directly on EF Core.
 
-### Why no Generic Repository?
+### Why No Generic Repository?
 
-A generic CRUD abstraction can hide business-oriented access patterns. TradeLens uses repositories designed around actual use-case requirements.
+A generic CRUD abstraction can hide business-oriented access patterns.
 
-### Why no Event Sourcing?
+TradeLens uses repositories designed around actual use-case requirements.
+
+### Why No Event Sourcing?
 
 TradeLens requires deterministic recalculation from transaction history, but does not require the operational and architectural complexity of full event sourcing for the MVP.
 
-### Why is Position derived?
+### Why Is Transaction History the Source of Truth?
 
-Transaction history represents the source of truth.
+Transaction history represents the historical business events that determine portfolio ownership and cost basis.
 
-Position is a materialized current state that can be recalculated when historical transactions change.
+Position is therefore treated as a materialized current state rather than the authoritative historical record.
 
-This provides a balance between calculation performance and data correctness.
+This allows positions to be recalculated when historical transactions are corrected.
 
-### Why not microservices?
+### Why Is Position Derived?
 
-The current domain and workload do not justify distributed-system complexity. TradeLens is intentionally designed as a modular monolith that can evolve if future requirements require service decomposition.
+Position represents current ownership and cost-basis state for an instrument within a portfolio.
 
-### Why lightweight CQRS?
+Keeping position derived from transaction history provides:
+
+- Deterministic recalculation
+- Correct handling of historical corrections
+- Efficient access to current holdings
+- Separation between historical facts and current materialized state
+
+### Why Is MarketPrice Independent from Position?
+
+Market prices change independently from ownership and cost basis.
+
+Keeping market price as a separate domain concept prevents market-data updates from mutating portfolio accounting state.
+
+This also allows the market-data provider to change without changing the core valuation model.
+
+### Why Partial Portfolio Valuation?
+
+A portfolio can contain multiple positions, and market data availability may differ between instruments.
+
+Instead of failing the entire portfolio valuation when one price is unavailable or stale, TradeLens returns a `PARTIAL` result.
+
+However, incomplete market-value and P&L totals are not presented as complete portfolio totals.
+
+This allows clients to display useful per-position information while clearly communicating that the portfolio-level valuation is incomplete.
+
+### Why No Microservices?
+
+The current domain and workload do not justify distributed-system complexity.
+
+TradeLens is intentionally designed as a modular monolith that can evolve if future requirements require service decomposition.
+
+### Why Lightweight CQRS?
 
 Commands and queries have different responsibilities, but a full CQRS infrastructure is unnecessary for the current scope.
 
 TradeLens therefore separates command and query use cases without introducing separate databases or messaging infrastructure.
+
+### Why External Market Price Provider Abstraction?
+
+Market data providers may change because of:
+
+- Data availability
+- Licensing
+- Cost
+- Reliability
+- Market coverage
+
+TradeLens therefore depends on `IMarketPriceProvider` rather than coupling application logic directly to a specific external provider.
 
 ---
 
@@ -524,114 +806,140 @@ TradeLens therefore separates command and query use cases without introducing se
 
 ### Completed
 
-- Transaction domain model
-- Position and P&L calculation
-- EF Core persistence
-- PostgreSQL setup
-- Repository pattern
-- Unit of Work
-- Transaction validation
-- Add Transaction use case
-- Historical transaction correction
+#### Core Domain
 
-- Idempotency
-  - Idempotency-Key support
-  - Request hash validation
-  - Atomic idempotency persistence
-  - Concurrent duplicate request handling
-  - Idempotency conflict handling
+- [x] Transaction domain model
+- [x] Position domain model
+- [x] Weighted-average cost basis
+- [x] Realized P&L calculation
+- [x] Unrealized P&L calculation
+- [x] Deterministic transaction processing
+- [x] Historical transaction correction
 
-- Optimistic concurrency
-  - EF Core concurrency token for Position
-  - Concurrent update detection
-  - Application-level concurrency exception
-  - HTTP 409 conflict mapping
-  - Integration test coverage
+#### Persistence
 
-- Portfolio valuation
-  - Market value calculation
-  - Unrealized P&L calculation
-  - Unrealized P&L percentage
-  - Position valuation query
-  - Valuation API endpoint
-  - Position-not-found handling
-  - Integration test coverage
+- [x] EF Core persistence
+- [x] PostgreSQL setup
+- [x] Database migrations
+- [x] Repository pattern
+- [x] Unit of Work
 
-- Portfolio ownership authorization
-  - Centralized portfolio access validation
-  - Server-side ownership verification
-  - Ownership enforcement for transaction creation
-  - Ownership enforcement for transaction retrieval
-  - Ownership enforcement for transaction correction
-  - Ownership enforcement for portfolio valuation
-  - HTTP 403 access-denied mapping
-  - Integration test coverage
+#### Transaction Use Cases
 
-- Authentication hardening
-  - Development authentication handler
-  - Production JWT Bearer authentication
-  - JWT issuer validation
-  - JWT audience validation
-  - JWT signing-key validation
-  - JWT lifetime validation
-  - Invalid JWT → HTTP 401
-  - Valid JWT + unauthorized portfolio → HTTP 403
-  - JWT integration test coverage
+- [x] Add Transaction
+- [x] Get Transaction
+- [x] Transaction correction
+- [x] Transaction validation
+- [x] Oversell business rule
 
-- Market price integration foundation
-  - MarketPrice domain entity
-  - EF Core persistence and migration
-  - Market price repository
-  - Latest market price query
-  - Market price provider abstraction
-  - Application-level market price sync service
-  - Market price synchronization job
-  - Background synchronization service
-  - Configurable synchronization interval
-  - Unknown instrument handling
-  - Market price integration with portfolio valuation
-  - Missing market price handling
-  - Market price repository test coverage
-  - Market price synchronization test coverage
-  - Background service registration test coverage
+#### Reliability
 
-- External market price provider integration
-  - Yahoo Finance development/demo provider
-  - IDX symbol mapping to Yahoo Finance symbols
-  - Latest available market price extraction
-  - Provider-level error handling
-  - HTTP resilience and retry strategy
-  - Integration test coverage
+- [x] Idempotency-Key support
+- [x] Request hash validation
+- [x] Atomic idempotency persistence
+- [x] Concurrent duplicate request handling
+- [x] Idempotency conflict handling
+- [x] Optimistic concurrency
+- [x] EF Core concurrency token
+- [x] Concurrent update detection
+- [x] HTTP 409 conflict mapping
 
-- Codebase cleanup and consistency review
+#### Authentication and Authorization
 
-- Automated test coverage
-  - Domain unit tests
-  - Application unit tests
-  - Integration tests
-  - Full solution test suite passing
+- [x] Development authentication handler
+- [x] Production JWT Bearer authentication
+- [x] JWT issuer validation
+- [x] JWT audience validation
+- [x] JWT signing-key validation
+- [x] JWT lifetime validation
+- [x] Portfolio ownership authorization
+- [x] Server-side ownership verification
+- [x] HTTP 401 authentication handling
+- [x] HTTP 403 authorization handling
 
-### In Progress
+#### Market Price
 
-- Market price freshness policy
-- Market-hours synchronization strategy
-- Portfolio-level valuation aggregation
+- [x] MarketPrice domain entity
+- [x] EF Core persistence
+- [x] Market price migration
+- [x] Market price repository
+- [x] Latest market price query
+- [x] Market price provider abstraction
+- [x] Yahoo Finance development/demo provider
+- [x] IDX symbol mapping
+- [x] Latest available price extraction
+- [x] Provider-level error handling
+- [x] Application-level synchronization service
+- [x] Market price synchronization job
+- [x] Background synchronization service
+- [x] Configurable synchronization interval
+- [x] Unknown instrument handling
+- [x] HTTP resilience and retry strategy
+- [x] Market price freshness policy
+- [x] Configurable maximum market price age
+- [x] Future timestamp rejection
+- [x] Missing market price handling
+- [x] Stale market price handling
+
+#### Valuation
+
+- [x] Position valuation
+- [x] Position valuation API
+- [x] Portfolio-level valuation
+- [x] Portfolio valuation aggregation
+- [x] Portfolio valuation API
+- [x] Complete valuation
+- [x] Partial valuation
+- [x] Per-position price status
+- [x] Total cost basis
+- [x] Total market value
+- [x] Total unrealized P&L
+- [x] Total unrealized P&L percentage
+- [x] Same reference time for portfolio freshness checks
+- [x] Portfolio ownership enforcement for valuation
+
+#### Testing
+
+- [x] Domain unit tests
+- [x] Application unit tests
+- [x] Integration tests
+- [x] PostgreSQL integration
+- [x] Authentication integration tests
+- [x] Authorization integration tests
+- [x] Market price integration tests
+- [x] HTTP resilience integration tests
+- [x] Portfolio valuation integration tests
+- [x] Full solution regression testing
+
+---
+
+## In Progress
+
 - Structured logging
-- Traceability
+- Traceability and correlation IDs
+- Production observability
+- Additional API completeness
+- Portfolio analytics expansion
 
-### Planned
+---
 
-- Portfolio-level valuation aggregation
-- Structured logging
-- Traceability
+## Planned
+
+- Market-hours-aware synchronization strategy
 - Health checks
 - Monitoring
 - Production Docker deployment
 - Configuration management
 - CI/CD
 - Operational documentation
-- Final integration test coverage and cleanup
-- Architecture and implementation documentation
+- Performance and scalability improvements
+- Additional portfolio analytics
+- Web dashboard
+- Portfolio performance history
+- Portfolio allocation analytics
+- Transaction history API
+- Position API
+- P&L analytics API
 
 ---
 
@@ -642,7 +950,8 @@ TradeLens therefore separates command and query use cases without introducing se
 - [x] Transaction
 - [x] Position
 - [x] Cost basis
-- [x] P&L
+- [x] Realized P&L
+- [x] Unrealized P&L
 
 ### Phase 2 — Transaction Use Cases
 
@@ -657,49 +966,89 @@ TradeLens therefore separates command and query use cases without introducing se
 - [x] Validation
 - [x] Error contract
 - [x] Problem Details
+- [x] Authentication
+- [x] Authorization
 
-### Phase 4 — Valuation
+### Phase 4 — Market Price and Valuation
 
 - [x] Market price persistence
 - [x] Market price repository
 - [x] Latest market price retrieval
 - [x] Market price provider abstraction
+- [x] External market price provider
 - [x] Market price synchronization service
 - [x] Background market price synchronization
-- [x] Portfolio valuation
-- [x] Unrealized P&L
+- [x] HTTP resilience
+- [x] Market price freshness policy
+- [x] Position valuation
+- [x] Portfolio-level valuation
+- [x] Partial portfolio valuation
+- [x] Portfolio valuation API
 
-### Phase 5 — Portfolio Analytics
-
-- [x] Position calculation
-- [x] Realized P&L calculation
-- [x] Unrealized P&L calculation
-- [x] Portfolio position valuation
-- [x] Market price integration foundation
-- [x] External market price provider
-- [ ] Market price freshness policy
-- [ ] Portfolio-level valuation aggregation
-
-### Phase 6 — Reliability, Security & Observability
+### Phase 5 — Reliability, Security & Observability
 
 - [x] Idempotency
 - [x] Optimistic concurrency
 - [x] Portfolio ownership authorization
 - [x] Authentication hardening
-- [x] HTTP resilience and retry strategy
+- [x] HTTP resilience
 - [x] Integration testing
 - [ ] Structured logging
 - [ ] Traceability
+- [ ] Health checks
+- [ ] Monitoring
 
-### Phase 7 — Production Readiness
+### Phase 6 — API Completeness
 
-- [x] Containerized development environment
+- [x] Transaction creation API
+- [x] Transaction retrieval API
+- [x] Transaction correction API
+- [x] Position valuation API
+- [x] Portfolio valuation API
+- [ ] Transaction listing API
+- [ ] Position listing API
+- [ ] Portfolio API
+- [ ] P&L analytics API
+
+### Phase 7 — Web Portfolio Dashboard
+
+- [ ] Login
+- [ ] Portfolio dashboard
+- [ ] Portfolio valuation summary
+- [ ] Position table
+- [ ] Market price freshness indicators
+- [ ] Position detail
+- [ ] Transaction history
+
+### Phase 8 — Portfolio Analytics
+
+- [ ] Performance history
+- [ ] Daily portfolio change
+- [ ] Allocation analysis
+- [ ] Realized P&L analytics
+- [ ] Total P&L analytics
+- [ ] Historical portfolio valuation
+
+### Phase 9 — Production Readiness
+
 - [ ] Production Docker deployment
 - [ ] Configuration management
 - [ ] Health checks
 - [ ] Monitoring
-- [ ] Operational documentation
 - [ ] CI/CD
+- [ ] Operational documentation
+- [ ] Production observability
+
+### Phase 10 — Advanced Portfolio Features
+
+- [ ] Multiple broker account consolidation
+- [ ] Corporate actions
+- [ ] Stock split
+- [ ] Reverse split
+- [ ] Rights issue
+- [ ] Bonus shares
+- [ ] Dividend
+- [ ] Corporate action cancellation and delay handling
 
 ---
 
