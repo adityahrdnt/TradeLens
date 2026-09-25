@@ -49,4 +49,31 @@ public class TransactionRepository : ITransactionRepository
             .ThenBy(x => x.Sequence)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Transaction>> GetByPortfolioAsync(
+        Guid portfolioId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Transactions
+            .Where(x => x.PortfolioId == portfolioId)
+            .OrderByDescending(x => x.TransactionDate)
+            .ThenByDescending(x => x.Sequence)
+            .ThenByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Transactions
+            .CountAsync(
+                x => x.PortfolioId == portfolioId,
+                cancellationToken);
+    }
 }
