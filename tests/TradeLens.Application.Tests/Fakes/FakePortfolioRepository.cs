@@ -25,4 +25,31 @@ public sealed class FakePortfolioRepository : IPortfolioRepository
 
         return Task.FromResult(portfolio);
     }
+
+    public Task<IReadOnlyList<Portfolio>> GetPagedByUserAsync(
+        Guid userId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var portfolios = Portfolios
+            .Where(x => x.UserId == userId)
+            .OrderBy(x => x.Name)
+            .ThenBy(x => x.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<Portfolio>>(portfolios);
+    }
+
+    public Task<int> CountByUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var count = Portfolios.Count(
+            x => x.UserId == userId);
+
+        return Task.FromResult(count);
+    }
 }

@@ -74,6 +74,8 @@ TradeLens provides a domain-oriented application model for maintaining this info
 * [x] Portfolio-level valuation aggregation
 * [x] Position-level valuation
 * [x] Portfolio ownership authorization
+* [x] Portfolio listing API
+* [x] Position listing API
 * [x] Development authentication
 * [x] Production JWT Bearer authentication
 * [x] Global exception handling
@@ -181,7 +183,9 @@ These technologies may be considered when actual system requirements justify the
 
 ### Authorization
 
-Portfolio access is enforced server-side based on the authenticated user identity.
+Portfolio ownership authorization is enforced across protected portfolio-related use cases, including transaction operations, position listing, and portfolio valuation.
+
+The portfolio listing endpoint is user-scoped and retrieves only portfolios belonging to the authenticated user.
 
 The API does not trust the client to determine ownership. Application services use a centralized `IPortfolioAccessService` to verify that the current user owns the requested portfolio.
 
@@ -218,7 +222,9 @@ Portfolio Valuation
 
 ### Transaction History
 
-Transaction history is the **source of truth** for portfolio ownership and cost-basis calculation.
+Transaction history is the source of truth for position and cost-basis calculation.
+
+Portfolio ownership is determined by the authenticated user's ownership of the Portfolio entity.
 
 Transactions represent historical business events rather than the current materialized state of a position.
 
@@ -532,19 +538,17 @@ Base path:
 ### Implemented
 
 ```text
-POST /api/v1/transactions
-
-GET  /api/v1/transactions/{id}
-
-POST /api/v1/transactions/{id}/corrections
-
-POST /api/v1/transactions/{id}/void
+GET  /api/v1/portfolios
 
 GET  /api/v1/portfolios/{portfolioId}/transactions
-
+GET  /api/v1/portfolios/{portfolioId}/positions
 GET  /api/v1/portfolios/{portfolioId}/positions/{instrumentId}/valuation
-
 GET  /api/v1/portfolios/{portfolioId}/valuation
+
+POST /api/v1/transactions
+GET  /api/v1/transactions/{id}
+POST /api/v1/transactions/{id}/corrections
+POST /api/v1/transactions/{id}/void
 ```
 
 ### Transaction Listing
@@ -566,14 +570,49 @@ pageSize
 
 The history endpoint includes active, superseded, and voided transactions because it represents historical records rather than only effective transactions.
 
+### Portfolio Listing
+
+Portfolios are exposed in an authenticated user context:
+
+GET /api/v1/portfolios
+
+The endpoint returns only portfolios owned by the authenticated user.
+
+The endpoint supports pagination:
+
+page
+pageSize
+
+pageSize is limited to a maximum of 100.
+
+Results are returned in deterministic order using:
+
+Name ASC
+Id ASC
+
+### Position Listing
+
+Current positions are exposed in portfolio context:
+
+GET /api/v1/portfolios/{portfolioId}/positions
+
+The endpoint supports pagination:
+
+page
+pageSize
+
+pageSize is limited to a maximum of 100.
+
+The endpoint returns the materialized current position state and does not perform market valuation.
+
+Portfolio ownership is verified before returning positions.
+
 ### Planned
 
 ```text
 GET /api/v1/positions
 
 GET /api/v1/pnl
-
-GET /api/v1/portfolios
 ```
 
 ---
@@ -816,18 +855,20 @@ The automated test suite currently covers:
 * HTTP resilience and retry behavior
 * API integration
 * PostgreSQL integration
+* Portfolio listing
+* Position listing
 
 ### Current Test Suite
 
 ```text
-Domain:       32 tests
-Application:  86 tests
-Integration:  41 tests
+Domain:        32 tests
+Application:  105 tests
+Integration:   52 tests
 ------------------------
-Total:       159 tests
+Total:        189 tests
 ```
 
-The full solution test suite is currently passing.
+The full solution test suite is currently passing with 189 tests.
 
 ---
 
@@ -949,6 +990,14 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Oversell business rule
 * [x] Deterministic position recalculation
 
+#### Portfolio APIs
+
+* [x] Portfolio listing
+* [x] Position listing
+* [x] Portfolio ownership filtering
+* [x] Pagination
+* [x] Deterministic ordering
+
 #### Reliability
 
 * [x] Idempotency-Key support
@@ -1032,6 +1081,8 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] HTTP resilience integration tests
 * [x] Portfolio valuation integration tests
 * [x] Full solution regression testing
+* [x] Portfolio listing integration tests
+* [x] Position listing integration tests
 
 ---
 
@@ -1129,8 +1180,8 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Transaction listing API
 * [x] Position valuation API
 * [x] Portfolio valuation API
-* [ ] Position listing API
-* [ ] Portfolio API
+* [x] Position listing API
+* [x] Portfolio API
 * [ ] P&L analytics API
 
 ### Phase 7 — Web Portfolio Dashboard
