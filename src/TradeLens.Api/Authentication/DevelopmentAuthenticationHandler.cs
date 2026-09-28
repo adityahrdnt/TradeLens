@@ -18,12 +18,26 @@ public sealed class DevelopmentAuthenticationHandler
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId =
+            Request.Headers.TryGetValue(
+                "X-Test-User-Id",
+                out var headerValue)
+            && Guid.TryParse(
+                headerValue.FirstOrDefault(),
+                out var parsedUserId)
+                ? parsedUserId
+                : Guid.Parse(
+                    "11111111-1111-1111-1111-111111111111");
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Name, "development-user")
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                userId.ToString()),
+
+            new Claim(
+                ClaimTypes.Name,
+                "development-user")
         };
 
         var identity = new ClaimsIdentity(
