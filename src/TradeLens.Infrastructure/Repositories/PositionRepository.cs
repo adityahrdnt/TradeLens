@@ -36,6 +36,31 @@ public class PositionRepository : IPositionRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Position>> GetPagedByPortfolioAsync(
+        Guid portfolioId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Positions
+            .Where(x => x.PortfolioId == portfolioId)
+            .OrderBy(x => x.InstrumentId)
+            .ThenBy(x => x.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Positions
+            .CountAsync(
+                x => x.PortfolioId == portfolioId,
+                cancellationToken);
+    }
+
     public async Task AddAsync(
         Position position,
         CancellationToken cancellationToken = default)
