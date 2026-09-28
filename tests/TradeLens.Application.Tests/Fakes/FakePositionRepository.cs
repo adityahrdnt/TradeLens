@@ -31,6 +31,34 @@ public sealed class FakePositionRepository : IPositionRepository
                 positions);
         }
 
+        public Task<IReadOnlyList<Position>> GetPagedByPortfolioAsync(
+            Guid portfolioId,
+            int skip,
+            int take,
+            CancellationToken cancellationToken = default)
+        {
+            var positions = Positions
+                .Where(x => x.PortfolioId == portfolioId)
+                .OrderBy(x => x.InstrumentId)
+                .ThenBy(x => x.Id)
+                .Skip(skip)
+                .Take(take)
+                .ToList();
+
+            return Task.FromResult<IReadOnlyList<Position>>(
+                positions);
+        }
+
+        public Task<int> CountByPortfolioAsync(
+            Guid portfolioId,
+            CancellationToken cancellationToken = default)
+        {
+            var count = Positions.Count(
+                x => x.PortfolioId == portfolioId);
+
+            return Task.FromResult(count);
+        }
+
         public Task AddAsync(
             Position position,
             CancellationToken cancellationToken = default)

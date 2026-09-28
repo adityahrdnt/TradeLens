@@ -10,8 +10,18 @@ public interface IPositionRepository
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Position>> GetByPortfolioAsync(
-    Guid portfolioId,
-    CancellationToken cancellationToken = default);
+        Guid portfolioId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Position>> GetPagedByPortfolioAsync(
+        Guid portfolioId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default);
 
     Task AddAsync(
         Position position,
