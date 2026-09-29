@@ -17,6 +17,10 @@ public interface ITransactionRepository
         Guid instrumentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Transaction>> GetEffectiveByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Transaction>> GetByPortfolioAsync(
         Guid portfolioId,
         int skip,

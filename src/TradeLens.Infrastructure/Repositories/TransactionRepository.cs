@@ -34,11 +34,10 @@ public class TransactionRepository : ITransactionRepository
                 cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Transaction>>
-        GetEffectiveTransactionsAsync(
-            Guid portfolioId,
-            Guid instrumentId,
-            CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Transaction>> GetEffectiveTransactionsAsync(
+        Guid portfolioId,
+        Guid instrumentId,
+        CancellationToken cancellationToken = default)
     {
         return await _dbContext.Transactions
             .Where(x =>
@@ -46,6 +45,20 @@ public class TransactionRepository : ITransactionRepository
                 x.InstrumentId == instrumentId &&
                 x.Status == TransactionStatus.Active)
             .OrderBy(x => x.TransactionDate)
+            .ThenBy(x => x.Sequence)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Transaction>> GetEffectiveByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Transactions
+            .Where(x =>
+                x.PortfolioId == portfolioId &&
+                x.Status == TransactionStatus.Active)
+            .OrderBy(x => x.InstrumentId)
+            .ThenBy(x => x.TransactionDate)
             .ThenBy(x => x.Sequence)
             .ToListAsync(cancellationToken);
     }
