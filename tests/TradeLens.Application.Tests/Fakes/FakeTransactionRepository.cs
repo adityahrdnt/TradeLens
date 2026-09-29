@@ -43,6 +43,22 @@ public sealed class FakeTransactionRepository : ITransactionRepository
         return Task.FromResult(result);
     }
 
+    public Task<IReadOnlyList<DomainTransaction>> GetEffectiveByPortfolioAsync(
+        Guid portfolioId,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<DomainTransaction> result = Transactions
+            .Where(x =>
+                x.PortfolioId == portfolioId &&
+                x.Status == TransactionStatus.Active)
+            .OrderBy(x => x.InstrumentId)
+            .ThenBy(x => x.TransactionDate)
+            .ThenBy(x => x.Sequence)
+            .ToList();
+
+        return Task.FromResult(result);
+    }
+
     public Task<IReadOnlyList<DomainTransaction>> GetByPortfolioAsync(
         Guid portfolioId,
         int skip,

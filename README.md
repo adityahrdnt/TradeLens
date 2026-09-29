@@ -539,11 +539,11 @@ Base path:
 
 ```text
 GET  /api/v1/portfolios
-
 GET  /api/v1/portfolios/{portfolioId}/transactions
 GET  /api/v1/portfolios/{portfolioId}/positions
 GET  /api/v1/portfolios/{portfolioId}/positions/{instrumentId}/valuation
 GET  /api/v1/portfolios/{portfolioId}/valuation
+GET  /api/v1/portfolios/{portfolioId}/pnl
 
 POST /api/v1/transactions
 GET  /api/v1/transactions/{id}
@@ -611,8 +611,6 @@ Portfolio ownership is verified before returning positions.
 
 ```text
 GET /api/v1/positions
-
-GET /api/v1/pnl
 ```
 
 ---
@@ -857,18 +855,20 @@ The automated test suite currently covers:
 * PostgreSQL integration
 * Portfolio listing
 * Position listing
+* P&L analytics
+* Partial P&L handling
 
 ### Current Test Suite
 
 ```text
 Domain:        32 tests
-Application:  105 tests
-Integration:   52 tests
+Application:  111 tests
+Integration:   56 tests
 ------------------------
-Total:        189 tests
+Total:        199 tests
 ```
 
-The full solution test suite is currently passing with 189 tests.
+The full solution test suite is currently passing with 199 tests.
 
 ---
 
@@ -1065,6 +1065,18 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Same reference time for portfolio freshness checks
 * [x] Portfolio ownership enforcement for valuation
 
+#### P&L Analytics
+
+* [x] Portfolio P&L API
+* [x] Realized P&L aggregation
+* [x] Unrealized P&L aggregation
+* [x] Total P&L calculation
+* [x] Complete P&L status
+* [x] Partial P&L status
+* [x] Missing market price handling
+* [x] Stale market price handling
+* [x] Portfolio ownership enforcement for P&L
+
 #### Testing
 
 * [x] Domain unit tests
@@ -1083,6 +1095,8 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Full solution regression testing
 * [x] Portfolio listing integration tests
 * [x] Position listing integration tests
+* [x] P&L analytics integration tests
+* [x] P&L partial valuation integration tests
 
 ---
 
@@ -1110,7 +1124,6 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * Web dashboard
 * Portfolio performance history
 * Portfolio allocation analytics
-* P&L analytics API
 
 ---
 
@@ -1182,7 +1195,7 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Portfolio valuation API
 * [x] Position listing API
 * [x] Portfolio API
-* [ ] P&L analytics API
+* [x] P&L analytics API
 
 ### Phase 7 — Web Portfolio Dashboard
 
