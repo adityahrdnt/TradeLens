@@ -49,6 +49,39 @@ public class TransactionRepository : ITransactionRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Transaction>> GetEffectiveTransactionsAsOfDateAsync(
+        Guid portfolioId,
+        Guid instrumentId,
+        DateOnly asOfDate,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Transactions
+            .Where(x =>
+                x.PortfolioId == portfolioId &&
+                x.InstrumentId == instrumentId &&
+                x.Status == TransactionStatus.Active &&
+                x.TransactionDate <= asOfDate)
+            .OrderBy(x => x.TransactionDate)
+            .ThenBy(x => x.Sequence)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Guid>> GetPortfolioIdsByInstrumentAsOfDateAsync(
+        Guid instrumentId,
+        DateOnly asOfDate,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Transactions
+            .Where(x =>
+                x.InstrumentId == instrumentId &&
+                x.Status == TransactionStatus.Active &&
+                x.TransactionDate <= asOfDate)
+            .Select(x => x.PortfolioId)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Transaction>> GetEffectiveByPortfolioAsync(
         Guid portfolioId,
         CancellationToken cancellationToken = default)

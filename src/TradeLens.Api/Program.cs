@@ -133,6 +133,8 @@ builder.Services.AddScoped<GetPositionValuationService>();
 builder.Services.AddScoped<GetPortfolioValuationService>();
 
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICorporateActionRepository, CorporateActionRepository>();
+builder.Services.AddScoped<ICorporateActionApplicationRepository, CorporateActionApplicationRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
 builder.Services.AddScoped<IInstrumentRepository, InstrumentRepository>();

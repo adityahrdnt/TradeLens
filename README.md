@@ -1077,6 +1077,23 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Stale market price handling
 * [x] Portfolio ownership enforcement for P&L
 
+#### Corporate Actions
+
+* [x] CorporateAction domain entity
+* [x] CorporateAction lifecycle
+* [x] Stock split calculation
+* [x] Reverse split calculation
+* [x] Bonus shares calculation
+* [x] Corporate action quantity adjustment
+* [x] Record date eligibility
+* [x] Effective date processing
+* [x] Fractional share flooring
+* [x] Cost basis preservation for quantity adjustments
+* [x] CorporateActionApplication domain entity
+* [x] Corporate action persistence
+* [x] Corporate action repositories
+* [x] Corporate action calculation unit tests
+
 #### Testing
 
 * [x] Domain unit tests
@@ -1107,6 +1124,9 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * Production observability
 * Additional API completeness
 * Portfolio analytics expansion
+* Corporate action application workflow
+* Corporate action API
+* Corporate action integration testing
 
 ---
 
@@ -1229,13 +1249,17 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 ### Phase 10 — Advanced Portfolio Features
 
 * [ ] Multiple broker account consolidation
-* [ ] Corporate actions
-* [ ] Stock split
-* [ ] Reverse split
+* [ ] Corporate action application workflow
+* [ ] Corporate action API
+* [x] Corporate action domain model
+* [x] Stock split
+* [x] Reverse split
+* [x] Bonus shares
 * [ ] Rights issue
-* [ ] Bonus shares
 * [ ] Dividend
-* [ ] Corporate action cancellation and delay handling
+* [x] Corporate action cancellation lifecycle
+* [ ] Corporate action delay handling
+* [ ] Corporate action correction / replacement
 
 ---
 
