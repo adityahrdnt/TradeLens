@@ -28,7 +28,7 @@ public sealed class InstrumentRepositoryTests
             $"T{instrumentId.ToString("N")[..10]}"
                 .ToUpperInvariant();
 
-        await using (var context = CreateDbContext())
+        await using (var context = IntegrationTestDbContextFactory.Create())
         {
             context.Instruments.Add(
                 new Instrument(
@@ -40,7 +40,7 @@ public sealed class InstrumentRepositoryTests
             await context.SaveChangesAsync();
         }
 
-        await using var repositoryContext = CreateDbContext();
+        await using var repositoryContext = IntegrationTestDbContextFactory.Create();
 
         var repository =
             new InstrumentRepository(repositoryContext);
@@ -72,7 +72,7 @@ public sealed class InstrumentRepositoryTests
             $"T{secondInstrumentId.ToString("N")[..10]}"
                 .ToUpperInvariant();
 
-        await using (var context = CreateDbContext())
+        await using (var context = IntegrationTestDbContextFactory.Create())
         {
             context.Instruments.AddRange(
                 new Instrument(
@@ -89,7 +89,7 @@ public sealed class InstrumentRepositoryTests
             await context.SaveChangesAsync();
         }
 
-        await using var repositoryContext = CreateDbContext();
+        await using var repositoryContext = IntegrationTestDbContextFactory.Create();
 
         var repository =
             new InstrumentRepository(repositoryContext);
@@ -109,16 +109,5 @@ public sealed class InstrumentRepositoryTests
             .Select(x => x.Symbol)
             .Should()
             .BeInAscendingOrder();
-    }
-
-    private TradeLensDbContext CreateDbContext()
-    {
-        var options =
-            new DbContextOptionsBuilder<TradeLensDbContext>()
-                .UseNpgsql(
-                    "Host=localhost;Port=5433;Database=tradelens_test;Username=tradelens;Password=")
-                .Options;
-
-        return new TradeLensDbContext(options);
     }
 }

@@ -22,7 +22,13 @@ public class TradeLensDbContext : DbContext
     public DbSet<Position> Positions => Set<Position>();
 
     public DbSet<IdempotencyRecord> IdempotencyRecords
-    => Set<IdempotencyRecord>();
+        => Set<IdempotencyRecord>();
+
+    public DbSet<CorporateAction> CorporateActions
+        => Set<CorporateAction>();
+
+    public DbSet<CorporateActionApplication> CorporateActionApplications
+        => Set<CorporateActionApplication>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

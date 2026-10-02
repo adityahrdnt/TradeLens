@@ -17,6 +17,17 @@ public interface ITransactionRepository
         Guid instrumentId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Transaction>> GetEffectiveTransactionsAsOfDateAsync(
+        Guid portfolioId,
+        Guid instrumentId,
+        DateOnly asOfDate,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Guid>> GetPortfolioIdsByInstrumentAsOfDateAsync(
+        Guid instrumentId,
+        DateOnly asOfDate,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Transaction>> GetEffectiveByPortfolioAsync(
         Guid portfolioId,
         CancellationToken cancellationToken = default);

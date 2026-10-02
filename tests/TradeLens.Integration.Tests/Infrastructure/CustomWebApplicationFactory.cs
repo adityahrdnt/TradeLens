@@ -28,7 +28,10 @@ public sealed class CustomWebApplicationFactory
             var settings = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:TradeLens"] =
-                    "Host=localhost;Port=5433;Database=tradelens_test;Username=tradelens;Password="
+                    Environment.GetEnvironmentVariable(
+                        "TRADELENS_TEST_CONNECTION_STRING")
+                    ?? throw new InvalidOperationException(
+                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured.")
             };
 
             config.AddInMemoryCollection(settings);
