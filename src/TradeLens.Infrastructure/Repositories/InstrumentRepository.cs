@@ -14,6 +14,16 @@ public sealed class InstrumentRepository : IInstrumentRepository
         _dbContext = dbContext;
     }
 
+    public async Task<Instrument?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Instruments
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+    }
+
     public async Task<Instrument?> GetBySymbolAsync(
         string symbol,
         CancellationToken cancellationToken = default)

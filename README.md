@@ -1093,6 +1093,11 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Corporate action persistence
 * [x] Corporate action repositories
 * [x] Corporate action calculation unit tests
+* [x] Corporate action application workflow
+* [x] Corporate action calculation unit tests
+* [x] Corporate action create API
+* [x] Corporate action create API validation
+* [x] Corporate action integration testing
 
 #### Testing
 
@@ -1124,9 +1129,12 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * Production observability
 * Additional API completeness
 * Portfolio analytics expansion
-* Corporate action application workflow
-* Corporate action API
-* Corporate action integration testing
+* Corporate action API:
+
+  * Get corporate action detail
+  * List corporate actions by instrument
+  * Apply corporate action
+  * Cancel corporate action
 
 ---
 
@@ -1249,8 +1257,13 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 ### Phase 10 — Advanced Portfolio Features
 
 * [ ] Multiple broker account consolidation
-* [ ] Corporate action application workflow
+* [x] Corporate action application workflow
 * [ ] Corporate action API
+  * [x] Create / schedule corporate action
+  * [ ] Get corporate action detail
+  * [ ] List corporate actions by instrument
+  * [ ] Apply corporate action
+  * [ ] Cancel corporate action
 * [x] Corporate action domain model
 * [x] Stock split
 * [x] Reverse split

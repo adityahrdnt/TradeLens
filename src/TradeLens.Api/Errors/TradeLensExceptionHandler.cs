@@ -66,6 +66,13 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.CorporateActionNotFound,
                     "Corporate Action Not Found"
                 ),
+
+            InstrumentNotFoundException =>
+                (
+                    StatusCodes.Status404NotFound,
+                    TradeLensErrorCode.InstrumentNotFound,
+                    "Instrument Not Found"
+                ),
             
             PortfolioNotFoundException =>
                 (
