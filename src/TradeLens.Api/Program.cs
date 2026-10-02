@@ -10,6 +10,7 @@ using TradeLens.Api.Authentication;
 using TradeLens.Api.BackgroundServices;
 using TradeLens.Api.Errors;
 using TradeLens.Api.Services;
+using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
 using TradeLens.Application.Interfaces;
 using TradeLens.Application.MarketPrices;
 using TradeLens.Application.Pnl.Queries.GetPortfolioPnl;
@@ -127,6 +128,7 @@ builder.Services.AddScoped<GetPortfolioTransactionsService>();
 builder.Services.AddScoped<GetPortfolioPositionsService>();
 builder.Services.AddScoped<GetPortfolioPnlService>();
 builder.Services.AddScoped<GetPortfoliosService>();
+builder.Services.AddScoped<CreateCorporateActionService>();
 builder.Services.AddScoped<PositionCalculator>();
 builder.Services.AddScoped<ValuationCalculator>();
 builder.Services.AddScoped<GetPositionValuationService>();
@@ -145,6 +147,7 @@ builder.Services.AddScoped<ITransactionRequestHasher, TransactionRequestHasher>(
 builder.Services.AddScoped<IUnitOfWork, TradeLensUnitOfWork>();
 
 builder.Services.AddScoped<GetPortfolioPnlQueryValidator>();
+builder.Services.AddScoped<CreateCorporateActionCommandValidator>();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();

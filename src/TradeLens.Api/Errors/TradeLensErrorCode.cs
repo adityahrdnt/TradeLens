@@ -6,6 +6,7 @@ public static class TradeLensErrorCode
     public const string InvalidTransaction = "INVALID_TRANSACTION";
     public const string TransactionNotFound = "TRANSACTION_NOT_FOUND";
     public const string CorporateActionNotFound = "CORPORATE_ACTION_NOT_FOUND";
+    public const string InstrumentNotFound = "INSTRUMENT_NOT_FOUND";
     public const string TransactionConflict = "TRANSACTION_CONFLICT";
     public const string MarketPriceNotAvailable = "MARKET_PRICE_NOT_AVAILABLE";
     public const string MarketPriceStale = "MARKET_PRICE_STALE";
