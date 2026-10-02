@@ -29,8 +29,8 @@ public sealed class PositionConcurrencyTests
             positionId,
             instrumentId);
 
-        await using var contextA = CreateDbContext();
-        await using var contextB = CreateDbContext();
+        await using var contextA = IntegrationTestDbContextFactory.Create();
+        await using var contextB = IntegrationTestDbContextFactory.Create();
 
         var positionA = await contextA.Positions
             .SingleAsync(x => x.Id == positionId);
@@ -59,21 +59,11 @@ public sealed class PositionConcurrencyTests
             () => unitOfWorkB.SaveChangesAsync());
     }
 
-    private TradeLensDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<TradeLensDbContext>()
-            .UseNpgsql(
-                "Host=localhost;Port=5433;Database=tradelens_test;Username=tradelens;Password=")
-            .Options;
-
-        return new TradeLensDbContext(options);
-    }
-
     private async Task CreatePositionAsync(
         Guid positionId,
         Guid instrumentId)
     {
-        await using var context = CreateDbContext();
+        await using var context = IntegrationTestDbContextFactory.Create();
 
         var position = new Position(
             positionId,

@@ -45,7 +45,7 @@ public sealed class MarketPriceRepositoryTests
             DateTimeOffset.UtcNow,
             "TEST");
 
-        await using var context = CreateDbContext();
+        await using var context = IntegrationTestDbContextFactory.Create();
 
         var repository = new MarketPriceRepository(context);
 
@@ -55,19 +55,9 @@ public sealed class MarketPriceRepositoryTests
         result!.Price.Should().Be(1200m);
     }
 
-    private TradeLensDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<TradeLensDbContext>()
-            .UseNpgsql(
-                "Host=localhost;Port=5433;Database=tradelens_test;Username=tradelens;Password=")
-            .Options;
-
-        return new TradeLensDbContext(options);
-    }
-
     private async Task CreateInstrumentAsync(Guid instrumentId)
     {
-        await using var context = CreateDbContext();
+        await using var context = IntegrationTestDbContextFactory.Create();
 
         context.Instruments.Add(
             new Instrument(
@@ -85,7 +75,7 @@ public sealed class MarketPriceRepositoryTests
         DateTimeOffset timestamp,
         string source)
     {
-        await using var context = CreateDbContext();
+        await using var context = IntegrationTestDbContextFactory.Create();
 
         context.MarketPrices.Add(
             new MarketPrice(
