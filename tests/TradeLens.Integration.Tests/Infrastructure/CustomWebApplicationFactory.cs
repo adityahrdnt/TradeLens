@@ -31,7 +31,12 @@ public sealed class CustomWebApplicationFactory
                     Environment.GetEnvironmentVariable(
                         "TRADELENS_TEST_CONNECTION_STRING")
                     ?? throw new InvalidOperationException(
-                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured.")
+                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured."),
+
+                ["Jwt:Issuer"] = "TradeLens",
+                ["Jwt:Audience"] = "TradeLens.Api",
+                ["Jwt:SecretKey"] =
+                    "TradeLens-Integration-Test-Secret-Key-At-Least-32"
             };
 
             config.AddInMemoryCollection(settings);
