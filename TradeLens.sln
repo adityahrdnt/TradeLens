@@ -15,11 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Api", "src\TradeL
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{801C8FAE-2B2A-4E52-9B06-AAB234DD4247}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Domain.tests", "tests\TradeLens.Domain.Tests\TradeLens.Domain.tests.csproj", "{D657D7EF-F559-4B0E-9B4D-50D04772D211}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Domain.tests", "tests\TradeLens.Domain.Tests\TradeLens.Domain.Tests.csproj", "{D657D7EF-F559-4B0E-9B4D-50D04772D211}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Application.tests", "tests\TradeLens.Application.Tests\TradeLens.Application.tests.csproj", "{8AA96CC6-A27F-4DC4-97D6-A402F47001FC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Application.tests", "tests\TradeLens.Application.Tests\TradeLens.Application.Tests.csproj", "{8AA96CC6-A27F-4DC4-97D6-A402F47001FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Integration.tests", "tests\TradeLens.Integration.Tests\TradeLens.Integration.tests.csproj", "{1D1AC1E2-4FC4-4B8D-89DC-4C68F3B3C3F3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TradeLens.Integration.tests", "tests\TradeLens.Integration.Tests\TradeLens.Integration.Tests.csproj", "{1D1AC1E2-4FC4-4B8D-89DC-4C68F3B3C3F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
