@@ -18,7 +18,11 @@ public sealed class JwtWebApplicationFactory
                 ["Jwt:Issuer"] = "TradeLens",
                 ["Jwt:Audience"] = "TradeLens.Api",
                 ["Jwt:SecretKey"] =
-                    "TradeLens-Integration-Test-Secret-Key-At-Least-32"
+                    "TradeLens-Integration-Test-Secret-Key-At-Least-32",
+
+                ["ConnectionStrings:TradeLens"] =
+                    Environment.GetEnvironmentVariable(
+                        "TRADELENS_TEST_CONNECTION_STRING")
             };
 
             config.AddInMemoryCollection(settings);
