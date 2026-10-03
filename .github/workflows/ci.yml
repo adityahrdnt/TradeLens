@@ -1,0 +1,61 @@
+name: TradeLens CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tradelens
+          POSTGRES_USER: tradelens
+          POSTGRES_PASSWORD: tradelens
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U tradelens -d tradelens"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      TRADELENS_TEST_CONNECTION_STRING: >-
+        Host=localhost;
+        Port=5432;
+        Database=tradelens;
+        Username=tradelens;
+        Password=tradelens
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore TradeLens.sln
+
+      - name: Build
+        run: dotnet build TradeLens.sln --no-restore --configuration Release
+
+      - name: Run Domain Tests
+        run: dotnet test tests/TradeLens.Domain.Tests/TradeLens.Domain.Tests.csproj --no-build --configuration Release
+
+      - name: Run Application Tests
+        run: dotnet test tests/TradeLens.Application.Tests/TradeLens.Application.Tests.csproj --no-build --configuration Release
+
+      - name: Run Integration Tests
+        run: dotnet test tests/TradeLens.Integration.Tests/TradeLens.Integration.Tests.csproj --no-build --configuration Release

@@ -19,6 +19,8 @@ public sealed class CustomWebApplicationFactory
     public static readonly Guid TestPortfolioId =
         Guid.Parse("22222222-2222-2222-2222-222222222222");
 
+    private static readonly SemaphoreSlim DatabaseInitializationLock = new(1, 1);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -31,7 +33,12 @@ public sealed class CustomWebApplicationFactory
                     Environment.GetEnvironmentVariable(
                         "TRADELENS_TEST_CONNECTION_STRING")
                     ?? throw new InvalidOperationException(
-                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured.")
+                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured."),
+
+                ["Jwt:Issuer"] = "TradeLens",
+                ["Jwt:Audience"] = "TradeLens.Api",
+                ["Jwt:SecretKey"] =
+                    "TradeLens-Integration-Test-Secret-Key-At-Least-32"
             };
 
             config.AddInMemoryCollection(settings);
@@ -52,26 +59,35 @@ public sealed class CustomWebApplicationFactory
 
     public async Task SeedAsync()
     {
-        using var scope = Services.CreateScope();
+        await DatabaseInitializationLock.WaitAsync();
 
-        var dbContext = scope.ServiceProvider
-            .GetRequiredService<TradeLensDbContext>();
-
-        await dbContext.Database.MigrateAsync();
-
-        var portfolio = await dbContext.Portfolios
-            .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
-
-        if (portfolio is null)
+        try
         {
-            portfolio = new Portfolio(
-                TestPortfolioId,
-                TestUserId,
-                "Integration Test Portfolio");
+            using var scope = Services.CreateScope();
 
-            dbContext.Portfolios.Add(portfolio);
+            var dbContext = scope.ServiceProvider
+                .GetRequiredService<TradeLensDbContext>();
 
-            await dbContext.SaveChangesAsync();
+            await dbContext.Database.MigrateAsync();
+
+            var portfolio = await dbContext.Portfolios
+                .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
+
+            if (portfolio is null)
+            {
+                portfolio = new Portfolio(
+                    TestPortfolioId,
+                    TestUserId,
+                    "Integration Test Portfolio");
+
+                dbContext.Portfolios.Add(portfolio);
+
+                await dbContext.SaveChangesAsync();
+            }
+        }
+        finally
+        {
+            DatabaseInitializationLock.Release();
         }
     }
 }
