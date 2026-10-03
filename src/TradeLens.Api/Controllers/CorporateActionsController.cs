@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TradeLens.Api.Contracts.CorporateActions;
+using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
 using TradeLens.Application.Interfaces;
@@ -15,17 +16,20 @@ public sealed class CorporateActionsController : ControllerBase
 {
     private readonly CreateCorporateActionService _createCorporateActionService;
     private readonly GetCorporateActionService _getCorporateActionService;
+    private readonly ApplyCorporateActionService _applyCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CreateCorporateActionCommand> _validator;
 
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
         GetCorporateActionService getCorporateActionService,
+        ApplyCorporateActionService applyCorporateActionService,
         ICurrentUserService currentUserService,
         IValidator<CreateCorporateActionCommand> validator)
     {
         _createCorporateActionService = createCorporateActionService;
         _getCorporateActionService = getCorporateActionService;
+        _applyCorporateActionService = applyCorporateActionService;
         _currentUserService = currentUserService;
         _validator = validator;
     }
@@ -96,6 +100,27 @@ public sealed class CorporateActionsController : ControllerBase
             result.CancelledAt,
             result.CancelledBy,
             result.CancellationReason);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/apply")]
+    public async Task<ActionResult<ApplyCorporateActionResponse>> Apply(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var command = new ApplyCorporateActionCommand(
+            id,
+            _currentUserService.UserId);
+
+        var result =
+            await _applyCorporateActionService.ExecuteAsync(
+                command,
+                cancellationToken);
+
+        var response = new ApplyCorporateActionResponse(
+            result.CorporateActionId,
+            result.AppliedPortfolioCount);
 
         return Ok(response);
     }
