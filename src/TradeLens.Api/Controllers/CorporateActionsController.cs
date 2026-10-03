@@ -5,6 +5,7 @@ using TradeLens.Api.Contracts.CorporateActions;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
+using TradeLens.Application.CorporateActions.Queries.GetCorporateActionsByInstrument;
 using TradeLens.Application.Interfaces;
 
 namespace TradeLens.Api.Controllers;
@@ -16,6 +17,7 @@ public sealed class CorporateActionsController : ControllerBase
 {
     private readonly CreateCorporateActionService _createCorporateActionService;
     private readonly GetCorporateActionService _getCorporateActionService;
+    private readonly GetCorporateActionsByInstrumentService _getCorporateActionsByInstrumentService;
     private readonly ApplyCorporateActionService _applyCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CreateCorporateActionCommand> _validator;
@@ -23,12 +25,14 @@ public sealed class CorporateActionsController : ControllerBase
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
         GetCorporateActionService getCorporateActionService,
+        GetCorporateActionsByInstrumentService getCorporateActionsByInstrumentService,
         ApplyCorporateActionService applyCorporateActionService,
         ICurrentUserService currentUserService,
         IValidator<CreateCorporateActionCommand> validator)
     {
         _createCorporateActionService = createCorporateActionService;
         _getCorporateActionService = getCorporateActionService;
+        _getCorporateActionsByInstrumentService = getCorporateActionsByInstrumentService;
         _applyCorporateActionService = applyCorporateActionService;
         _currentUserService = currentUserService;
         _validator = validator;
@@ -100,6 +104,47 @@ public sealed class CorporateActionsController : ControllerBase
             result.CancelledAt,
             result.CancelledBy,
             result.CancellationReason);
+
+        return Ok(response);
+    }
+
+    [HttpGet("instrument/{instrumentId:guid}")]
+    public async Task<
+        ActionResult<IReadOnlyList<GetCorporateActionsByInstrumentResponse>>>
+        GetByInstrument(
+            Guid instrumentId,
+            CancellationToken cancellationToken)
+    {
+        var query =
+            new GetCorporateActionsByInstrumentQuery(
+                instrumentId);
+
+        var results =
+            await _getCorporateActionsByInstrumentService.ExecuteAsync(
+                query,
+                cancellationToken);
+
+        var response =
+            results
+                .Select(x =>
+                    new GetCorporateActionsByInstrumentResponse(
+                        x.CorporateActionId,
+                        x.InstrumentId,
+                        x.Type,
+                        x.Numerator,
+                        x.Denominator,
+                        x.RecordDate,
+                        x.ExDate,
+                        x.EffectiveDate,
+                        x.Status,
+                        x.CreatedAt,
+                        x.CreatedBy,
+                        x.AppliedAt,
+                        x.AppliedBy,
+                        x.CancelledAt,
+                        x.CancelledBy,
+                        x.CancellationReason))
+                .ToList();
 
         return Ok(response);
     }
