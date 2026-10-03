@@ -19,6 +19,8 @@ public sealed class CustomWebApplicationFactory
     public static readonly Guid TestPortfolioId =
         Guid.Parse("22222222-2222-2222-2222-222222222222");
 
+    private static readonly SemaphoreSlim MigrationLock = new(1, 1);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -62,7 +64,16 @@ public sealed class CustomWebApplicationFactory
         var dbContext = scope.ServiceProvider
             .GetRequiredService<TradeLensDbContext>();
 
-        await dbContext.Database.MigrateAsync();
+        await MigrationLock.WaitAsync();
+
+        try
+        {
+            await dbContext.Database.MigrateAsync();
+        }
+        finally
+        {
+            MigrationLock.Release();
+        }
 
         var portfolio = await dbContext.Portfolios
             .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
