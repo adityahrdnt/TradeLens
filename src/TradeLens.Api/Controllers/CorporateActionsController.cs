@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TradeLens.Api.Contracts.CorporateActions;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
+using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
 using TradeLens.Application.Interfaces;
 
 namespace TradeLens.Api.Controllers;
@@ -13,15 +14,18 @@ namespace TradeLens.Api.Controllers;
 public sealed class CorporateActionsController : ControllerBase
 {
     private readonly CreateCorporateActionService _createCorporateActionService;
+    private readonly GetCorporateActionService _getCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CreateCorporateActionCommand> _validator;
 
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
+        GetCorporateActionService getCorporateActionService,
         ICurrentUserService currentUserService,
         IValidator<CreateCorporateActionCommand> validator)
     {
         _createCorporateActionService = createCorporateActionService;
+        _getCorporateActionService = getCorporateActionService;
         _currentUserService = currentUserService;
         _validator = validator;
     }
@@ -66,8 +70,33 @@ public sealed class CorporateActionsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public IActionResult GetById(Guid id)
+    public async Task<ActionResult<GetCorporateActionResponse>> GetById(
+        Guid id,
+        CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var result =
+            await _getCorporateActionService.ExecuteAsync(
+                id,
+                cancellationToken);
+
+        var response = new GetCorporateActionResponse(
+            result.CorporateActionId,
+            result.InstrumentId,
+            result.Type,
+            result.Numerator,
+            result.Denominator,
+            result.RecordDate,
+            result.ExDate,
+            result.EffectiveDate,
+            result.Status,
+            result.CreatedAt,
+            result.CreatedBy,
+            result.AppliedAt,
+            result.AppliedBy,
+            result.CancelledAt,
+            result.CancelledBy,
+            result.CancellationReason);
+
+        return Ok(response);
     }
 }

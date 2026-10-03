@@ -68,6 +68,19 @@ TradeLens provides a domain-oriented application model for maintaining this info
 * [x] Transaction history listing
 * [x] Transaction API
 * [x] Get Transaction API
+* [x] Corporate action domain model
+* [x] Corporate action lifecycle
+* [x] Stock split calculation
+* [x] Reverse split calculation
+* [x] Bonus shares calculation
+* [x] Corporate action quantity adjustment
+* [x] Record date eligibility
+* [x] Effective date processing
+* [x] Fractional share flooring
+* [x] Cost basis preservation for quantity adjustments
+* [x] Corporate action application workflow
+* [x] Corporate action create API
+* [x] Corporate action detail API
 * [x] Idempotency
 * [x] Optimistic concurrency
 * [x] Portfolio valuation
@@ -549,6 +562,9 @@ POST /api/v1/transactions
 GET  /api/v1/transactions/{id}
 POST /api/v1/transactions/{id}/corrections
 POST /api/v1/transactions/{id}/void
+
+POST /api/v1/corporate-actions
+GET  /api/v1/corporate-actions/{id}
 ```
 
 ### Transaction Listing
@@ -861,14 +877,14 @@ The automated test suite currently covers:
 ### Current Test Suite
 
 ```text
-Domain:        32 tests
-Application:  111 tests
-Integration:   56 tests
+Domain:        60 tests
+Application:  122 tests
+Integration:   63 tests
 ------------------------
-Total:        199 tests
+Total:        245 tests
 ```
 
-The full solution test suite is currently passing with 199 tests.
+The full solution test suite is currently passing with 245 tests.
 
 ---
 
@@ -1092,11 +1108,14 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] CorporateActionApplication domain entity
 * [x] Corporate action persistence
 * [x] Corporate action repositories
-* [x] Corporate action calculation unit tests
+* [x] Corporate action domain model
+* [x] Corporate action lifecycle
+* [x] Corporate action calculation
 * [x] Corporate action application workflow
-* [x] Corporate action calculation unit tests
 * [x] Corporate action create API
+* [x] Corporate action detail API
 * [x] Corporate action create API validation
+* [x] Corporate action calculation unit tests
 * [x] Corporate action integration testing
 
 #### Testing
@@ -1130,8 +1149,6 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * Additional API completeness
 * Portfolio analytics expansion
 * Corporate action API:
-
-  * Get corporate action detail
   * List corporate actions by instrument
   * Apply corporate action
   * Cancel corporate action
@@ -1260,7 +1277,7 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Corporate action application workflow
 * [ ] Corporate action API
   * [x] Create / schedule corporate action
-  * [ ] Get corporate action detail
+  * [x] Get corporate action detail
   * [ ] List corporate actions by instrument
   * [ ] Apply corporate action
   * [ ] Cancel corporate action
