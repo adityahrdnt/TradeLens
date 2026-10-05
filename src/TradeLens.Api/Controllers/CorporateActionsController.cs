@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TradeLens.Api.Contracts.CorporateActions;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
+using TradeLens.Application.CorporateActions.Commands.CancelCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateActionsByInstrument;
@@ -19,23 +20,29 @@ public sealed class CorporateActionsController : ControllerBase
     private readonly GetCorporateActionService _getCorporateActionService;
     private readonly GetCorporateActionsByInstrumentService _getCorporateActionsByInstrumentService;
     private readonly ApplyCorporateActionService _applyCorporateActionService;
+    private readonly CancelCorporateActionService _cancelCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IValidator<CreateCorporateActionCommand> _validator;
+    private readonly IValidator<CancelCorporateActionCommand> _cancelValidator;
+    private readonly IValidator<CreateCorporateActionCommand> _createValidator;
 
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
         GetCorporateActionService getCorporateActionService,
         GetCorporateActionsByInstrumentService getCorporateActionsByInstrumentService,
         ApplyCorporateActionService applyCorporateActionService,
+        CancelCorporateActionService cancelCorporateActionService,
         ICurrentUserService currentUserService,
-        IValidator<CreateCorporateActionCommand> validator)
+        IValidator<CancelCorporateActionCommand> cancelValidator,
+        IValidator<CreateCorporateActionCommand> createValidator)
     {
         _createCorporateActionService = createCorporateActionService;
         _getCorporateActionService = getCorporateActionService;
         _getCorporateActionsByInstrumentService = getCorporateActionsByInstrumentService;
         _applyCorporateActionService = applyCorporateActionService;
+        _cancelCorporateActionService = cancelCorporateActionService;
         _currentUserService = currentUserService;
-        _validator = validator;
+        _cancelValidator = cancelValidator;
+        _createValidator = createValidator;
     }
 
     [HttpPost]
@@ -54,7 +61,7 @@ public sealed class CorporateActionsController : ControllerBase
             _currentUserService.UserId);
 
         var validationResult =
-            await _validator.ValidateAsync(
+            await _createValidator.ValidateAsync(
                 command,
                 cancellationToken);
 
@@ -166,6 +173,40 @@ public sealed class CorporateActionsController : ControllerBase
         var response = new ApplyCorporateActionResponse(
             result.CorporateActionId,
             result.AppliedPortfolioCount);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<ActionResult<CancelCorporateActionResponse>> Cancel(
+        Guid id,
+        [FromBody] CancelCorporateActionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command =
+            new CancelCorporateActionCommand(
+                id,
+                _currentUserService.UserId,
+                request.Reason);
+
+        var validationResult =
+            await _cancelValidator.ValidateAsync(
+                command,
+                cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        var result =
+            await _cancelCorporateActionService.ExecuteAsync(
+                command,
+                cancellationToken);
+
+        var response =
+            new CancelCorporateActionResponse(
+                result.CorporateActionId);
 
         return Ok(response);
     }
