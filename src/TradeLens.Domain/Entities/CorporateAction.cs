@@ -19,6 +19,8 @@ public class CorporateAction
 
     public DateOnly ExDate { get; private set; }
 
+    public DateOnly OriginalEffectiveDate { get; private set; }
+
     public DateOnly EffectiveDate { get; private set; }
 
     public CorporateActionStatus Status { get; private set; }
@@ -86,10 +88,33 @@ public class CorporateAction
         Denominator = denominator;
         RecordDate = recordDate;
         ExDate = exDate;
+        OriginalEffectiveDate = effectiveDate;
         EffectiveDate = effectiveDate;
         Status = CorporateActionStatus.Scheduled;
         CreatedBy = createdBy;
         CreatedAt = createdAt;
+    }
+
+    public (DateOnly PreviousEffectiveDate, DateOnly NewEffectiveDate) Delay(
+        DateOnly newEffectiveDate)
+    {
+        if (Status != CorporateActionStatus.Scheduled)
+            throw new DomainException(
+                "Only a scheduled corporate action can be delayed.");
+
+        if (newEffectiveDate <= EffectiveDate)
+            throw new DomainException(
+                "New effective date must be later than the current effective date.");
+
+        if (newEffectiveDate < ExDate)
+            throw new DomainException(
+                "Corporate action effective date cannot be earlier than ex-date.");
+
+        var previousEffectiveDate = EffectiveDate;
+
+        EffectiveDate = newEffectiveDate;
+
+        return (previousEffectiveDate, EffectiveDate);
     }
 
     public void Apply(

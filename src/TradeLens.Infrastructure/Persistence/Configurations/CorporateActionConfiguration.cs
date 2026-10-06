@@ -29,6 +29,9 @@ public class CorporateActionConfiguration
         builder.Property(x => x.ExDate)
             .IsRequired();
 
+        builder.Property(x => x.OriginalEffectiveDate)
+            .IsRequired();
+
         builder.Property(x => x.EffectiveDate)
             .IsRequired();
 
