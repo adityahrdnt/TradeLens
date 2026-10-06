@@ -30,6 +30,9 @@ public class TradeLensDbContext : DbContext
     public DbSet<CorporateActionApplication> CorporateActionApplications
         => Set<CorporateActionApplication>();
 
+    public DbSet<CorporateActionChange> CorporateActionChanges
+        => Set<CorporateActionChange>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(

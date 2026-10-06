@@ -5,6 +5,7 @@ using TradeLens.Api.Contracts.CorporateActions;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CancelCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
+using TradeLens.Application.CorporateActions.Commands.DelayCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateActionsByInstrument;
 using TradeLens.Application.Interfaces;
@@ -21,9 +22,11 @@ public sealed class CorporateActionsController : ControllerBase
     private readonly GetCorporateActionsByInstrumentService _getCorporateActionsByInstrumentService;
     private readonly ApplyCorporateActionService _applyCorporateActionService;
     private readonly CancelCorporateActionService _cancelCorporateActionService;
+    private readonly DelayCorporateActionService _delayCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CancelCorporateActionCommand> _cancelValidator;
     private readonly IValidator<CreateCorporateActionCommand> _createValidator;
+    private readonly IValidator<DelayCorporateActionCommand> _delayValidator;
 
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
@@ -31,18 +34,22 @@ public sealed class CorporateActionsController : ControllerBase
         GetCorporateActionsByInstrumentService getCorporateActionsByInstrumentService,
         ApplyCorporateActionService applyCorporateActionService,
         CancelCorporateActionService cancelCorporateActionService,
+        DelayCorporateActionService delayCorporateActionService,
         ICurrentUserService currentUserService,
         IValidator<CancelCorporateActionCommand> cancelValidator,
-        IValidator<CreateCorporateActionCommand> createValidator)
+        IValidator<CreateCorporateActionCommand> createValidator,
+        IValidator<DelayCorporateActionCommand> delayValidator)
     {
         _createCorporateActionService = createCorporateActionService;
         _getCorporateActionService = getCorporateActionService;
         _getCorporateActionsByInstrumentService = getCorporateActionsByInstrumentService;
         _applyCorporateActionService = applyCorporateActionService;
         _cancelCorporateActionService = cancelCorporateActionService;
+        _delayCorporateActionService = delayCorporateActionService;
         _currentUserService = currentUserService;
         _cancelValidator = cancelValidator;
         _createValidator = createValidator;
+        _delayValidator = delayValidator;
     }
 
     [HttpPost]
@@ -206,6 +213,41 @@ public sealed class CorporateActionsController : ControllerBase
 
         var response =
             new CancelCorporateActionResponse(
+                result.CorporateActionId);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/delay")]
+    public async Task<ActionResult<DelayCorporateActionResponse>> Delay(
+        Guid id,
+        [FromBody] DelayCorporateActionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command =
+            new DelayCorporateActionCommand(
+                id,
+                request.NewEffectiveDate,
+                request.Reason,
+                _currentUserService.UserId);
+
+        var validationResult =
+            await _delayValidator.ValidateAsync(
+                command,
+                cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        var result =
+            await _delayCorporateActionService.ExecuteAsync(
+                command,
+                cancellationToken);
+
+        var response =
+            new DelayCorporateActionResponse(
                 result.CorporateActionId);
 
         return Ok(response);
