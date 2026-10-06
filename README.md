@@ -81,6 +81,13 @@ TradeLens provides a domain-oriented application model for maintaining this info
 * [x] Corporate action application workflow
 * [x] Corporate action create API
 * [x] Corporate action detail API
+* [x] Corporate action listing by instrument
+* [x] Corporate action cancellation workflow
+* [x] Corporate action cancellation API
+* [x] Corporate action delay workflow
+* [x] Corporate action delay API
+* [x] Corporate action change history
+* [x] Original effective date preservation
 * [x] Idempotency
 * [x] Optimistic concurrency
 * [x] Portfolio valuation
@@ -225,7 +232,9 @@ User
 Instrument
  ├── Transaction
  ├── Position
- └── MarketPrice
+ ├── MarketPrice
+ └── CorporateAction
+      └── CorporateActionChange
 
 Portfolio Valuation
  ├── Portfolio
@@ -565,6 +574,10 @@ POST /api/v1/transactions/{id}/void
 
 POST /api/v1/corporate-actions
 GET  /api/v1/corporate-actions/{id}
+GET  /api/v1/corporate-actions/instrument/{instrumentId}
+POST /api/v1/corporate-actions/{id}/apply
+POST /api/v1/corporate-actions/{id}/cancel
+POST /api/v1/corporate-actions/{id}/delay
 ```
 
 ### Transaction Listing
@@ -873,18 +886,23 @@ The automated test suite currently covers:
 * Position listing
 * P&L analytics
 * Partial P&L handling
+* Corporate action lifecycle
+* Corporate action application
+* Corporate action cancellation
+* Corporate action delay and change history
+* Corporate action position recalculation
 
 ### Current Test Suite
 
 ```text
 Domain:        60 tests
-Application:  122 tests
-Integration:   63 tests
+Application:  130 tests
+Integration:   77 tests
 ------------------------
-Total:        245 tests
+Total:        267 tests
 ```
 
-The full solution test suite is currently passing with 245 tests.
+The full solution test suite is currently passing with 267 tests.
 
 ---
 
@@ -1148,10 +1166,6 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * Production observability
 * Additional API completeness
 * Portfolio analytics expansion
-* Corporate action API:
-  * List corporate actions by instrument
-  * Apply corporate action
-  * Cancel corporate action
 
 ---
 
@@ -1275,12 +1289,14 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 
 * [ ] Multiple broker account consolidation
 * [x] Corporate action application workflow
-* [ ] Corporate action API
+* [x] Corporate action API
   * [x] Create / schedule corporate action
   * [x] Get corporate action detail
-  * [ ] List corporate actions by instrument
-  * [ ] Apply corporate action
-  * [ ] Cancel corporate action
+  * [x] List corporate actions by instrument
+  * [x] Apply corporate action
+  * [x] Cancel corporate action
+  * [x] Delay corporate action
+  * [x] Corporate action change history
 * [x] Corporate action domain model
 * [x] Stock split
 * [x] Reverse split
@@ -1288,7 +1304,7 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [ ] Rights issue
 * [ ] Dividend
 * [x] Corporate action cancellation lifecycle
-* [ ] Corporate action delay handling
+* [x] Corporate action delay handling
 * [ ] Corporate action correction / replacement
 
 ---
