@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
@@ -15,6 +16,7 @@ public sealed class ApplyCorporateActionService
     private readonly CorporateActionPositionCalculator _corporateActionPositionCalculator;
     private readonly CorporateActionCalculator _corporateActionCalculator;
     private readonly PositionCalculator _positionCalculator;
+    private readonly ILogger<ApplyCorporateActionService> _logger;
 
     public ApplyCorporateActionService(
         ICorporateActionRepository corporateActionRepository,
@@ -24,7 +26,8 @@ public sealed class ApplyCorporateActionService
         IUnitOfWork unitOfWork,
         CorporateActionPositionCalculator corporateActionPositionCalculator,
         CorporateActionCalculator corporateActionCalculator,
-        PositionCalculator positionCalculator)
+        PositionCalculator positionCalculator,
+        ILogger<ApplyCorporateActionService> logger)
     {
         _corporateActionRepository = corporateActionRepository;
         _applicationRepository = applicationRepository;
@@ -34,6 +37,7 @@ public sealed class ApplyCorporateActionService
         _corporateActionPositionCalculator = corporateActionPositionCalculator;
         _corporateActionCalculator = corporateActionCalculator;
         _positionCalculator = positionCalculator;
+        _logger = logger;
     }
 
     public async Task<ApplyCorporateActionResult> ExecuteAsync(
@@ -170,6 +174,12 @@ public sealed class ApplyCorporateActionService
 
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
+
+                _logger.LogInformation(
+                    "Corporate action applied. CorporateActionId: {CorporateActionId}, InstrumentId: {InstrumentId}, AppliedPortfolioCount: {AppliedPortfolioCount}",
+                    corporateAction.Id,
+                    corporateAction.InstrumentId,
+                    appliedPortfolioCount);
 
                 return new ApplyCorporateActionResult(
                     corporateAction.Id,

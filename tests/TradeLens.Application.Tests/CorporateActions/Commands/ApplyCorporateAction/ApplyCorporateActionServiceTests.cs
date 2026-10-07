@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Tests.Fakes;
@@ -707,6 +708,7 @@ public class ApplyCorporateActionServiceTests
                 new PositionCalculator(),
                 new CorporateActionCalculator()),
             new CorporateActionCalculator(),
-            new PositionCalculator());
+            new PositionCalculator(),
+            NullLogger<ApplyCorporateActionService>.Instance);
     }
 }

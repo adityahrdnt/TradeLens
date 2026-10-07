@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using TradeLens.Api.Middleware;
 using TradeLens.Application.Exceptions;
 using TradeLens.Domain.Exceptions;
 
@@ -38,7 +39,7 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.PositionInsufficientQuantity,
                     "Insufficient Position Quantity"
                 ),
-            
+
             MarketPriceNotAvailableException =>
                 (
                     StatusCodes.Status400BadRequest,
@@ -73,7 +74,7 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.InstrumentNotFound,
                     "Instrument Not Found"
                 ),
-            
+
             PortfolioNotFoundException =>
                 (
                     StatusCodes.Status404NotFound,
@@ -115,7 +116,7 @@ public sealed class TradeLensExceptionHandler
                     TradeLensErrorCode.PositionConcurrencyConflict,
                     "Position Concurrency Conflict"
                 ),
-            
+
             DomainException =>
                 (
                     StatusCodes.Status400BadRequest,
@@ -168,10 +169,9 @@ public sealed class TradeLensExceptionHandler
             Status = status,
             Title = title,
             Code = code,
-            Detail = status == StatusCodes.Status500InternalServerError
-                ? "An unexpected error occurred."
-                : exception.Message,
+            Detail = status == 500 ? "An unexpected error occurred." : exception.Message,
             TraceId = httpContext.TraceIdentifier,
+            CorrelationId = httpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString(),
             Errors = errors
         };
 
@@ -182,7 +182,7 @@ public sealed class TradeLensExceptionHandler
                 Exception = exception,
                 ProblemDetails = problemDetails
             });
-        
+
         return true;
     }
 }

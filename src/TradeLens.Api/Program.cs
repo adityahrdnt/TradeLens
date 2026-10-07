@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using TradeLens.Api.Authentication;
 using TradeLens.Api.BackgroundServices;
 using TradeLens.Api.Errors;
+using TradeLens.Api.Middleware;
 using TradeLens.Api.Services;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CancelCorporateAction;
@@ -230,6 +231,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.UseHttpsRedirection();
 

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
@@ -12,19 +13,22 @@ public sealed class CorrectTransactionService
     private readonly IPortfolioAccessService _portfolioAccessService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PositionCalculator _positionCalculator;
+    private readonly ILogger<CorrectTransactionService> _logger;
 
     public CorrectTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
         IPortfolioAccessService portfolioAccessService,
         IUnitOfWork unitOfWork,
-        PositionCalculator positionCalculator)
+        PositionCalculator positionCalculator,
+        ILogger<CorrectTransactionService> logger)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
         _portfolioAccessService = portfolioAccessService;
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
+        _logger = logger;
     }
 
     public async Task<CorrectTransactionResult> ExecuteAsync(
@@ -120,6 +124,13 @@ public sealed class CorrectTransactionService
 
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
+
+                _logger.LogInformation(
+                    "Transaction corrected. OriginalTransactionId: {OriginalTransactionId}, CorrectedTransactionId: {CorrectedTransactionId}, PortfolioId: {PortfolioId}, InstrumentId: {InstrumentId}",
+                    original.Id,
+                    corrected.Id,
+                    original.PortfolioId,
+                    original.InstrumentId);
 
                 return new CorrectTransactionResult(
                     original.Id,

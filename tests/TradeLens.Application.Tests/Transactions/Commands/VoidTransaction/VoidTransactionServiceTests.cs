@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Tests.Fakes;
 using TradeLens.Application.Transactions.Commands.VoidTransaction;
@@ -208,7 +209,8 @@ public class VoidTransactionServiceTests
             positionRepository,
             portfolioAccessService,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            NullLogger<VoidTransactionService>.Instance);
 
         var command = new VoidTransactionCommand(
             Guid.NewGuid(),
@@ -348,6 +350,7 @@ public class VoidTransactionServiceTests
             positionRepository,
             portfolioAccessService,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            NullLogger<VoidTransactionService>.Instance);
     }
 }

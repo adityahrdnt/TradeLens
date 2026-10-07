@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
@@ -12,19 +13,22 @@ public sealed class VoidTransactionService
     private readonly IPortfolioAccessService _portfolioAccessService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PositionCalculator _positionCalculator;
+    private readonly ILogger<VoidTransactionService> _logger;
 
     public VoidTransactionService(
         ITransactionRepository transactionRepository,
         IPositionRepository positionRepository,
         IPortfolioAccessService portfolioAccessService,
         IUnitOfWork unitOfWork,
-        PositionCalculator positionCalculator)
+        PositionCalculator positionCalculator,
+        ILogger<VoidTransactionService> logger)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
         _portfolioAccessService = portfolioAccessService;
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
+        _logger = logger;
     }
 
     public async Task<VoidTransactionResult> ExecuteAsync(
@@ -102,6 +106,12 @@ public sealed class VoidTransactionService
 
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
+
+                _logger.LogInformation(
+                    "Transaction voided. TransactionId: {TransactionId}, PortfolioId: {PortfolioId}, InstrumentId: {InstrumentId}",
+                    transaction.Id,
+                    transaction.PortfolioId,
+                    transaction.InstrumentId);
 
                 return new VoidTransactionResult(
                     transaction.Id,

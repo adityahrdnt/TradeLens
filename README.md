@@ -103,6 +103,9 @@ TradeLens provides a domain-oriented application model for maintaining this info
 * [x] Production JWT Bearer authentication
 * [x] Global exception handling
 * [x] Standardized API error contract
+* [x] Structured business event logging
+* [x] Correlation ID propagation
+* [x] Correlation ID in API error responses
 * [x] Market price integration foundation
 * [x] External market price provider
 * [x] Background market price synchronization
@@ -1039,9 +1042,9 @@ The automated test suite currently covers:
 ```text
 Domain:        75 tests
 Application:  134 tests
-Integration:   81 tests
+Integration:   84 tests
 ------------------------
-Total:        290 tests
+Total:        293 tests
 ```
 
 The full solution test suite is currently passing with 290 tests.
@@ -1214,6 +1217,15 @@ This provides auditability without modeling every corporate action amendment as 
 * [x] HTTP 401 authentication handling
 * [x] HTTP 403 authorization handling
 
+#### Observability & Error Handling
+
+* [x] Global exception handling
+* [x] Standardized API error contract
+* [x] Structured business event logging
+* [x] Correlation ID propagation
+* [x] Correlation ID in API error responses
+* [x] Trace ID preservation for diagnostics
+
 #### Market Price
 
 * [x] MarketPrice domain entity
@@ -1329,8 +1341,6 @@ This provides auditability without modeling every corporate action amendment as 
 
 ## In Progress
 
-* Structured logging
-* Traceability and correlation IDs
 * Production observability
 * Additional API completeness
 * Portfolio analytics expansion
@@ -1406,8 +1416,8 @@ This provides auditability without modeling every corporate action amendment as 
 * [x] Authentication hardening
 * [x] HTTP resilience
 * [x] Integration testing
-* [ ] Structured logging
-* [ ] Traceability
+* [x] Structured logging
+* [x] Traceability and correlation IDs
 * [ ] Health checks
 * [ ] Monitoring
 
@@ -1451,7 +1461,7 @@ This provides auditability without modeling every corporate action amendment as 
 * [ ] Monitoring
 * [ ] CI/CD
 * [ ] Operational documentation
-* [ ] Production observability
+* [ ] Advanced observability and operational monitoring
 
 ### Phase 10 — Advanced Portfolio Features
 
