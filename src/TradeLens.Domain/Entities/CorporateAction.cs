@@ -117,6 +117,68 @@ public class CorporateAction
         return (previousEffectiveDate, EffectiveDate);
     }
 
+    public (
+        int PreviousNumerator,
+        int NewNumerator,
+        int PreviousDenominator,
+        int NewDenominator,
+        DateOnly PreviousRecordDate,
+        DateOnly NewRecordDate,
+        DateOnly PreviousExDate,
+        DateOnly NewExDate,
+        DateOnly PreviousEffectiveDate,
+        DateOnly NewEffectiveDate) Correct(
+        int newNumerator,
+        int newDenominator,
+        DateOnly newRecordDate,
+        DateOnly newExDate,
+        DateOnly newEffectiveDate)
+    {
+        if (Status != CorporateActionStatus.Scheduled)
+            throw new DomainException(
+                "Only a scheduled corporate action can be corrected.");
+
+        if (newNumerator <= 0)
+            throw new DomainException(
+                "Corporate action numerator must be greater than zero.");
+
+        if (newDenominator <= 0)
+            throw new DomainException(
+                "Corporate action denominator must be greater than zero.");
+
+        if (newExDate < newRecordDate)
+            throw new DomainException(
+                "Corporate action ex-date cannot be earlier than record date.");
+
+        if (newEffectiveDate < newExDate)
+            throw new DomainException(
+                "Corporate action effective date cannot be earlier than ex-date.");
+
+        var previousNumerator = Numerator;
+        var previousDenominator = Denominator;
+        var previousRecordDate = RecordDate;
+        var previousExDate = ExDate;
+        var previousEffectiveDate = EffectiveDate;
+
+        Numerator = newNumerator;
+        Denominator = newDenominator;
+        RecordDate = newRecordDate;
+        ExDate = newExDate;
+        EffectiveDate = newEffectiveDate;
+
+        return (
+            previousNumerator,
+            Numerator,
+            previousDenominator,
+            Denominator,
+            previousRecordDate,
+            RecordDate,
+            previousExDate,
+            ExDate,
+            previousEffectiveDate,
+            EffectiveDate);
+    }
+
     public void Apply(
         DateTimeOffset appliedAt,
         Guid appliedBy)
