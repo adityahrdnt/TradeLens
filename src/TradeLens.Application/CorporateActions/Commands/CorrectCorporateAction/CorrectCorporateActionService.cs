@@ -2,15 +2,15 @@ using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
 
-namespace TradeLens.Application.CorporateActions.Commands.DelayCorporateAction;
+namespace TradeLens.Application.CorporateActions.Commands.CorrectCorporateAction;
 
-public sealed class DelayCorporateActionService
+public sealed class CorrectCorporateActionService
 {
     private readonly ICorporateActionRepository _corporateActionRepository;
     private readonly ICorporateActionChangeRepository _changeRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public DelayCorporateActionService(
+    public CorrectCorporateActionService(
         ICorporateActionRepository corporateActionRepository,
         ICorporateActionChangeRepository changeRepository,
         IUnitOfWork unitOfWork)
@@ -20,8 +20,8 @@ public sealed class DelayCorporateActionService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<DelayCorporateActionResult> ExecuteAsync(
-        DelayCorporateActionCommand command,
+    public async Task<CorrectCorporateActionResult> ExecuteAsync(
+        CorrectCorporateActionCommand command,
         CancellationToken cancellationToken = default)
     {
         var corporateAction =
@@ -40,20 +40,31 @@ public sealed class DelayCorporateActionService
             {
                 var now = DateTimeOffset.UtcNow;
 
-                var (
-                    previousEffectiveDate,
-                    newEffectiveDate) =
-                    corporateAction.Delay(
+                var correction =
+                    corporateAction.Correct(
+                        command.NewNumerator,
+                        command.NewDenominator,
+                        command.NewRecordDate,
+                        command.NewExDate,
                         command.NewEffectiveDate);
 
-                var change = CorporateActionChange.CreateDelay(
-                    Guid.NewGuid(),
-                    corporateAction.Id,
-                    previousEffectiveDate,
-                    newEffectiveDate,
-                    command.Reason,
-                    now,
-                    command.DelayedBy);
+                var change =
+                    CorporateActionChange.CreateCorrection(
+                        Guid.NewGuid(),
+                        corporateAction.Id,
+                        correction.PreviousNumerator,
+                        correction.NewNumerator,
+                        correction.PreviousDenominator,
+                        correction.NewDenominator,
+                        correction.PreviousRecordDate,
+                        correction.NewRecordDate,
+                        correction.PreviousExDate,
+                        correction.NewExDate,
+                        correction.PreviousEffectiveDate,
+                        correction.NewEffectiveDate,
+                        command.Reason,
+                        now,
+                        command.CorrectedBy);
 
                 await _changeRepository.AddAsync(
                     change,
@@ -62,7 +73,7 @@ public sealed class DelayCorporateActionService
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
 
-                return new DelayCorporateActionResult(
+                return new CorrectCorporateActionResult(
                     corporateAction.Id);
             },
             cancellationToken);

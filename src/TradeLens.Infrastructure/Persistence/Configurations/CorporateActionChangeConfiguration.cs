@@ -17,6 +17,22 @@ public class CorporateActionChangeConfiguration
         builder.Property(x => x.ChangeType)
             .IsRequired();
 
+        builder.Property(x => x.PreviousNumerator);
+
+        builder.Property(x => x.NewNumerator);
+
+        builder.Property(x => x.PreviousDenominator);
+
+        builder.Property(x => x.NewDenominator);
+
+        builder.Property(x => x.PreviousRecordDate);
+
+        builder.Property(x => x.NewRecordDate);
+
+        builder.Property(x => x.PreviousExDate);
+
+        builder.Property(x => x.NewExDate);
+
         builder.Property(x => x.PreviousEffectiveDate);
 
         builder.Property(x => x.NewEffectiveDate);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TradeLens.Api.Contracts.CorporateActions;
 using TradeLens.Application.CorporateActions.Commands.ApplyCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CancelCorporateAction;
+using TradeLens.Application.CorporateActions.Commands.CorrectCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.CreateCorporateAction;
 using TradeLens.Application.CorporateActions.Commands.DelayCorporateAction;
 using TradeLens.Application.CorporateActions.Queries.GetCorporateAction;
@@ -23,10 +24,12 @@ public sealed class CorporateActionsController : ControllerBase
     private readonly ApplyCorporateActionService _applyCorporateActionService;
     private readonly CancelCorporateActionService _cancelCorporateActionService;
     private readonly DelayCorporateActionService _delayCorporateActionService;
+    private readonly CorrectCorporateActionService _correctCorporateActionService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IValidator<CancelCorporateActionCommand> _cancelValidator;
     private readonly IValidator<CreateCorporateActionCommand> _createValidator;
     private readonly IValidator<DelayCorporateActionCommand> _delayValidator;
+    private readonly IValidator<CorrectCorporateActionCommand> _correctValidator;
 
     public CorporateActionsController(
         CreateCorporateActionService createCorporateActionService,
@@ -35,10 +38,12 @@ public sealed class CorporateActionsController : ControllerBase
         ApplyCorporateActionService applyCorporateActionService,
         CancelCorporateActionService cancelCorporateActionService,
         DelayCorporateActionService delayCorporateActionService,
+        CorrectCorporateActionService correctCorporateActionService,
         ICurrentUserService currentUserService,
         IValidator<CancelCorporateActionCommand> cancelValidator,
         IValidator<CreateCorporateActionCommand> createValidator,
-        IValidator<DelayCorporateActionCommand> delayValidator)
+        IValidator<DelayCorporateActionCommand> delayValidator,
+        IValidator<CorrectCorporateActionCommand> correctValidator)
     {
         _createCorporateActionService = createCorporateActionService;
         _getCorporateActionService = getCorporateActionService;
@@ -46,10 +51,12 @@ public sealed class CorporateActionsController : ControllerBase
         _applyCorporateActionService = applyCorporateActionService;
         _cancelCorporateActionService = cancelCorporateActionService;
         _delayCorporateActionService = delayCorporateActionService;
+        _correctCorporateActionService = correctCorporateActionService;
         _currentUserService = currentUserService;
         _cancelValidator = cancelValidator;
         _createValidator = createValidator;
         _delayValidator = delayValidator;
+        _correctValidator = correctValidator;
     }
 
     [HttpPost]
@@ -248,6 +255,45 @@ public sealed class CorporateActionsController : ControllerBase
 
         var response =
             new DelayCorporateActionResponse(
+                result.CorporateActionId);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/correct")]
+    public async Task<ActionResult<CorrectCorporateActionResponse>> Correct(
+        Guid id,
+        [FromBody] CorrectCorporateActionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command =
+            new CorrectCorporateActionCommand(
+                id,
+                request.NewNumerator,
+                request.NewDenominator,
+                request.NewRecordDate,
+                request.NewExDate,
+                request.NewEffectiveDate,
+                request.Reason,
+                _currentUserService.UserId);
+
+        var validationResult =
+            await _correctValidator.ValidateAsync(
+                command,
+                cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        var result =
+            await _correctCorporateActionService.ExecuteAsync(
+                command,
+                cancellationToken);
+
+        var response =
+            new CorrectCorporateActionResponse(
                 result.CorporateActionId);
 
         return Ok(response);

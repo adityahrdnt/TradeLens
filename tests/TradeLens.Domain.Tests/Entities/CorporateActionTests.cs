@@ -204,6 +204,192 @@ public class CorporateActionTests
             .WithMessage("Only a scheduled corporate action can be cancelled.");
     }
 
+    [Fact]
+    public void Correct_ShouldUpdateCorporateActionStateAndReturnPreviousState()
+    {
+        var action = CreateAction();
+
+        var result = action.Correct(
+            3,
+            2,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 16));
+
+        result.PreviousNumerator.Should().Be(2);
+        result.NewNumerator.Should().Be(3);
+
+        result.PreviousDenominator.Should().Be(1);
+        result.NewDenominator.Should().Be(2);
+
+        result.PreviousRecordDate.Should()
+            .Be(new DateOnly(2026, 10, 10));
+
+        result.NewRecordDate.Should()
+            .Be(new DateOnly(2026, 10, 11));
+
+        result.PreviousExDate.Should()
+            .Be(new DateOnly(2026, 10, 13));
+
+        result.NewExDate.Should()
+            .Be(new DateOnly(2026, 10, 14));
+
+        result.PreviousEffectiveDate.Should()
+            .Be(new DateOnly(2026, 10, 15));
+
+        result.NewEffectiveDate.Should()
+            .Be(new DateOnly(2026, 10, 16));
+
+        action.Numerator.Should().Be(3);
+        action.Denominator.Should().Be(2);
+        action.RecordDate.Should()
+            .Be(new DateOnly(2026, 10, 11));
+        action.ExDate.Should()
+            .Be(new DateOnly(2026, 10, 14));
+        action.EffectiveDate.Should()
+            .Be(new DateOnly(2026, 10, 16));
+
+        action.OriginalEffectiveDate.Should()
+            .Be(new DateOnly(2026, 10, 15));
+
+        action.Status.Should()
+            .Be(CorporateActionStatus.Scheduled);
+
+        action.InstrumentId.Should().Be(InstrumentId);
+        action.Type.Should().Be(CorporateActionType.StockSplit);
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectAppliedCorporateAction()
+    {
+        var action = CreateAction();
+
+        action.Apply(
+            new DateTimeOffset(
+                2026,
+                10,
+                15,
+                9,
+                30,
+                0,
+                TimeSpan.Zero),
+            UserId);
+
+        var act = () => action.Correct(
+            3,
+            2,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 16));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Only a scheduled corporate action can be corrected.");
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectCancelledCorporateAction()
+    {
+        var action = CreateAction();
+
+        action.Cancel(
+            new DateTimeOffset(
+                2026,
+                10,
+                14,
+                8,
+                20,
+                0,
+                TimeSpan.Zero),
+            UserId,
+            "Issuer cancelled corporate action.");
+
+        var act = () => action.Correct(
+            3,
+            2,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 16));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Only a scheduled corporate action can be corrected.");
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectNonPositiveNumerator()
+    {
+        var action = CreateAction();
+
+        var act = () => action.Correct(
+            0,
+            2,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 16));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Corporate action numerator must be greater than zero.");
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectNonPositiveDenominator()
+    {
+        var action = CreateAction();
+
+        var act = () => action.Correct(
+            3,
+            0,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 16));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Corporate action denominator must be greater than zero.");
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectExDateBeforeRecordDate()
+    {
+        var action = CreateAction();
+
+        var act = () => action.Correct(
+            3,
+            2,
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 13),
+            new DateOnly(2026, 10, 16));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Corporate action ex-date cannot be earlier than record date.");
+    }
+
+    [Fact]
+    public void Correct_ShouldRejectEffectiveDateBeforeExDate()
+    {
+        var action = CreateAction();
+
+        var act = () => action.Correct(
+            3,
+            2,
+            new DateOnly(2026, 10, 11),
+            new DateOnly(2026, 10, 14),
+            new DateOnly(2026, 10, 13));
+
+        act.Should()
+            .Throw<DomainException>()
+            .WithMessage(
+                "Corporate action effective date cannot be earlier than ex-date.");
+    }
+
     private static CorporateAction CreateAction()
     {
         return new CorporateAction(
