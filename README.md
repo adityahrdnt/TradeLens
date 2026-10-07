@@ -86,7 +86,10 @@ TradeLens provides a domain-oriented application model for maintaining this info
 * [x] Corporate action cancellation API
 * [x] Corporate action delay workflow
 * [x] Corporate action delay API
+* [x] Corporate action correction workflow
+* [x] Corporate action correction API
 * [x] Corporate action change history
+* [x] Corporate action correction history snapshots
 * [x] Original effective date preservation
 * [x] Idempotency
 * [x] Optimistic concurrency
@@ -213,8 +216,6 @@ Unauthorized portfolio access returns:
 
 * `403 Forbidden`
 * Error code: `PORTFOLIO_ACCESS_DENIED`
-
-Portfolio ownership authorization is enforced across protected portfolio-related use cases, including transaction operations and portfolio valuation.
 
 ---
 
@@ -357,6 +358,116 @@ The original transaction remains in transaction history with:
 Voided transactions are automatically excluded from effective position calculations.
 
 Voiding a transaction recalculates the affected position from the remaining effective transaction history.
+
+---
+
+## Corporate Actions
+
+Corporate actions are modeled independently from transactions because they represent instrument-level events that can affect portfolio positions without being trading transactions.
+
+```text
+Instrument
+      │
+      ▼
+CorporateAction
+      │
+      └── CorporateActionChange
+```
+
+The current implementation supports:
+
+* Stock split
+* Reverse split
+* Bonus shares
+* Scheduled / Applied / Cancelled lifecycle
+* Record date eligibility
+* Ex-date
+* Effective date
+* Corporate action application
+* Corporate action cancellation
+* Corporate action delay
+* Corporate action correction
+* Immutable corporate action change history
+
+### Corporate Action Lifecycle
+
+```text
+                 ┌──────────────┐
+                 │  Scheduled   │
+                 └──────┬───────┘
+                        │
+             ┌──────────┴──────────┐
+             │                     │
+             ▼                     ▼
+      ┌─────────────┐       ┌─────────────┐
+      │   Applied   │       │  Cancelled  │
+      └─────────────┘       └─────────────┘
+```
+
+A delayed corporate action remains `Scheduled`. Delay is represented by changing the effective date rather than introducing a separate lifecycle status.
+
+Only scheduled corporate actions can currently be corrected.
+
+### Corporate Action Correction
+
+Corporate action correction amends the existing `CorporateAction` rather than creating a superseding corporate action.
+
+Immutable identity fields remain unchanged:
+
+* `Id`
+* `InstrumentId`
+* `Type`
+* `OriginalEffectiveDate`
+
+Correctable fields include:
+
+* `Numerator`
+* `Denominator`
+* `RecordDate`
+* `ExDate`
+* `EffectiveDate`
+
+The correction operation records the complete before/after state in `CorporateActionChange`.
+
+```text
+Scheduled CorporateAction
+        │
+        │ correction
+        ▼
+Updated CorporateAction
+        │
+        └── CorporateActionChange
+             ├── Previous state
+             └── New state
+```
+
+Corrections are restricted to scheduled corporate actions because an applied corporate action may already have affected portfolio positions. Reversing an applied corporate action requires additional downstream recalculation and is outside the current scope.
+
+`OriginalEffectiveDate` is preserved as the original scheduled effective date even when the effective date is delayed or corrected.
+
+### Corporate Action Change History
+
+`CorporateActionChange` provides immutable audit history for changes made to scheduled corporate actions.
+
+Delay changes record:
+
+* Previous effective date
+* New effective date
+* Reason
+* Changed by
+* Changed at
+
+Correction changes record a complete snapshot of:
+
+* Previous numerator / denominator
+* New numerator / denominator
+* Previous record date / ex-date / effective date
+* New record date / ex-date / effective date
+* Reason
+* Changed by
+* Changed at
+
+This preserves an auditable history without replacing the identity of the corporate action.
 
 ---
 
@@ -578,7 +689,37 @@ GET  /api/v1/corporate-actions/instrument/{instrumentId}
 POST /api/v1/corporate-actions/{id}/apply
 POST /api/v1/corporate-actions/{id}/cancel
 POST /api/v1/corporate-actions/{id}/delay
+POST /api/v1/corporate-actions/{id}/correct
 ```
+
+### Corporate Action Correction
+
+Corporate action correction is performed using the complete corrected state:
+
+```text
+POST /api/v1/corporate-actions/{id}/correct
+```
+
+Example request:
+
+```json
+{
+  "newNumerator": 3,
+  "newDenominator": 2,
+  "newRecordDate": "2026-10-11",
+  "newExDate": "2026-10-14",
+  "newEffectiveDate": "2026-10-16",
+  "reason": "Issuer corrected the corporate action ratio and schedule."
+}
+```
+
+The correction endpoint:
+
+* Updates only scheduled corporate actions.
+* Preserves the corporate action identity.
+* Preserves `OriginalEffectiveDate`.
+* Records an immutable before/after correction snapshot.
+* Does not create a new transaction or superseding corporate action.
 
 ### Transaction Listing
 
@@ -890,19 +1031,20 @@ The automated test suite currently covers:
 * Corporate action application
 * Corporate action cancellation
 * Corporate action delay and change history
+* Corporate action correction and change history
 * Corporate action position recalculation
 
 ### Current Test Suite
 
 ```text
-Domain:        60 tests
-Application:  130 tests
-Integration:   77 tests
+Domain:        75 tests
+Application:  134 tests
+Integration:   81 tests
 ------------------------
-Total:        267 tests
+Total:        290 tests
 ```
 
-The full solution test suite is currently passing with 267 tests.
+The full solution test suite is currently passing with 290 tests.
 
 ---
 
@@ -987,6 +1129,20 @@ Market data providers may change because of:
 * Market coverage
 
 TradeLens therefore depends on `IMarketPriceProvider` rather than coupling application logic directly to a specific external provider.
+
+### Why Corporate Action Correction Uses In-Place Amendment?
+
+Corporate action correction differs from transaction correction because a corporate action represents a single instrument-level event whose identity should remain stable.
+
+Therefore:
+
+* The existing `CorporateAction` identity is preserved.
+* Immutable identity fields such as instrument and type are not changed.
+* Correctable terms are amended while the action remains `Scheduled`.
+* The previous and new state are recorded in immutable `CorporateActionChange` history.
+* Applied corporate actions are not corrected in the current MVP because they may already have affected positions.
+
+This provides auditability without modeling every corporate action amendment as a new business event.
 
 ---
 
@@ -1132,8 +1288,17 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Corporate action application workflow
 * [x] Corporate action create API
 * [x] Corporate action detail API
+* [x] Corporate action listing by instrument
 * [x] Corporate action create API validation
-* [x] Corporate action calculation unit tests
+* [x] Corporate action cancellation workflow
+* [x] Corporate action cancellation API
+* [x] Corporate action delay workflow
+* [x] Corporate action delay API
+* [x] Corporate action correction workflow
+* [x] Corporate action correction API
+* [x] Corporate action change history
+* [x] Corporate action correction history snapshots
+* [x] Original effective date preservation
 * [x] Corporate action integration testing
 
 #### Testing
@@ -1156,6 +1321,9 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [x] Position listing integration tests
 * [x] P&L analytics integration tests
 * [x] P&L partial valuation integration tests
+* [x] Corporate action cancellation integration tests
+* [x] Corporate action delay integration tests
+* [x] Corporate action correction integration tests
 
 ---
 
@@ -1296,6 +1464,7 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
   * [x] Apply corporate action
   * [x] Cancel corporate action
   * [x] Delay corporate action
+  * [x] Correct corporate action
   * [x] Corporate action change history
 * [x] Corporate action domain model
 * [x] Stock split
@@ -1305,7 +1474,7 @@ TradeLens therefore depends on `IMarketPriceProvider` rather than coupling appli
 * [ ] Dividend
 * [x] Corporate action cancellation lifecycle
 * [x] Corporate action delay handling
-* [ ] Corporate action correction / replacement
+* [x] Corporate action correction workflow
 
 ---
 
