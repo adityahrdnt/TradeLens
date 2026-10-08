@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
@@ -14,6 +15,7 @@ public sealed class AddTransactionService
     private readonly IIdempotencyRepository _idempotencyRepository;
     private readonly ITransactionRequestHasher _transactionRequestHasher;
     private readonly IPortfolioAccessService _portfolioAccessService;
+    private readonly ILogger<AddTransactionService> _logger;
 
     public AddTransactionService(
         ITransactionRepository transactionRepository,
@@ -22,7 +24,8 @@ public sealed class AddTransactionService
         IIdempotencyRepository idempotencyRepository,
         IUnitOfWork unitOfWork,
         PositionCalculator positionCalculator,
-        ITransactionRequestHasher transactionRequestHasher)
+        ITransactionRequestHasher transactionRequestHasher,
+        ILogger<AddTransactionService> logger)
     {
         _transactionRepository = transactionRepository;
         _positionRepository = positionRepository;
@@ -31,6 +34,7 @@ public sealed class AddTransactionService
         _unitOfWork = unitOfWork;
         _positionCalculator = positionCalculator;
         _transactionRequestHasher = transactionRequestHasher;
+        _logger = logger;
     }
 
     public async Task<AddTransactionResult> ExecuteAsync(
@@ -161,6 +165,12 @@ public sealed class AddTransactionService
 
                     await _unitOfWork.SaveChangesAsync(
                         transactionCancellationToken);
+
+                    _logger.LogInformation(
+                        "Transaction created. TransactionId: {TransactionId}, PortfolioId: {PortfolioId}, InstrumentId: {InstrumentId}",
+                        transaction.Id,
+                        transaction.PortfolioId,
+                        transaction.InstrumentId);
 
                     return new AddTransactionResult(
                         transaction.Id,

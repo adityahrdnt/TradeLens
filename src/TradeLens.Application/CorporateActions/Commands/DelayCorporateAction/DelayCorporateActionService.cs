@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Interfaces;
 using TradeLens.Domain.Entities;
@@ -9,15 +10,18 @@ public sealed class DelayCorporateActionService
     private readonly ICorporateActionRepository _corporateActionRepository;
     private readonly ICorporateActionChangeRepository _changeRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<DelayCorporateActionService> _logger;
 
     public DelayCorporateActionService(
         ICorporateActionRepository corporateActionRepository,
         ICorporateActionChangeRepository changeRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<DelayCorporateActionService> logger)
     {
         _corporateActionRepository = corporateActionRepository;
         _changeRepository = changeRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<DelayCorporateActionResult> ExecuteAsync(
@@ -61,6 +65,12 @@ public sealed class DelayCorporateActionService
 
                 await _unitOfWork.SaveChangesAsync(
                     transactionCancellationToken);
+
+                _logger.LogInformation(
+                    "Corporate action delayed. CorporateActionId: {CorporateActionId}, PreviousEffectiveDate: {PreviousEffectiveDate}, NewEffectiveDate: {NewEffectiveDate}",
+                    corporateAction.Id,
+                    previousEffectiveDate,
+                    newEffectiveDate);
 
                 return new DelayCorporateActionResult(
                     corporateAction.Id);

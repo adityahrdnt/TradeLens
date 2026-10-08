@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using TradeLens.Application.Exceptions;
 using TradeLens.Application.Tests.Fakes;
 using TradeLens.Application.Transactions.Commands.CorrectTransaction;
@@ -89,7 +90,7 @@ public class CorrectTransactionServiceTests
         result.PositionAveragePrice.Should().Be(1_300_000m / 120m);
 
         unitOfWork.SaveChangesCallCount.Should().Be(1);
-    }    
+    }
 
     [Fact]
     public async Task ExecuteAsync_WhenTransactionDoesNotExist_ShouldThrowTransactionNotFoundException()
@@ -106,7 +107,8 @@ public class CorrectTransactionServiceTests
             positionRepository,
             portfolioAccessService,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            NullLogger<CorrectTransactionService>.Instance);
 
         var command = new CorrectTransactionCommand(
             Guid.NewGuid(),
@@ -261,6 +263,7 @@ public class CorrectTransactionServiceTests
             positionRepository,
             portfolioAccessService,
             unitOfWork,
-            new PositionCalculator());
+            new PositionCalculator(),
+            NullLogger<CorrectTransactionService>.Instance);
     }
 }

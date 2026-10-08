@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using TradeLens.Application.CorporateActions.Commands.DelayCorporateAction;
 using TradeLens.Application.Tests.Fakes;
 using TradeLens.Domain.Entities;
@@ -50,7 +51,8 @@ public class DelayCorporateActionServiceTests
             new DelayCorporateActionService(
                 corporateActionRepository,
                 changeRepository,
-                unitOfWork);
+                unitOfWork,
+                NullLogger<DelayCorporateActionService>.Instance);
 
         var command =
             new DelayCorporateActionCommand(
@@ -137,7 +139,8 @@ public class DelayCorporateActionServiceTests
             new DelayCorporateActionService(
                 corporateActionRepository,
                 changeRepository,
-                unitOfWork);
+                unitOfWork,
+                NullLogger<DelayCorporateActionService>.Instance);
 
         var corporateActionId = Guid.NewGuid();
 
@@ -198,7 +201,8 @@ public class DelayCorporateActionServiceTests
             new DelayCorporateActionService(
                 corporateActionRepository,
                 changeRepository,
-                unitOfWork);
+                unitOfWork,
+                NullLogger<DelayCorporateActionService>.Instance);
 
         var command =
             new DelayCorporateActionCommand(
@@ -270,7 +274,8 @@ public class DelayCorporateActionServiceTests
             new DelayCorporateActionService(
                 corporateActionRepository,
                 changeRepository,
-                unitOfWork);
+                unitOfWork,
+                NullLogger<DelayCorporateActionService>.Instance);
 
         var command =
             new DelayCorporateActionCommand(

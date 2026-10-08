@@ -6,6 +6,7 @@ using TradeLens.Domain.Services;
 using TradeLens.Domain.Exceptions;
 using TradeLens.Application.Tests.Fakes;
 using TradeLens.Domain.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace TradeLens.Application.Tests.Transaction.Commands.AddTransaction;
 
@@ -521,6 +522,7 @@ public class AddTransactionServiceTests
             idempotencyRepository,
             unitOfWork,
             new PositionCalculator(),
-            transactionRequestHasher);
+            transactionRequestHasher,
+            NullLogger<AddTransactionService>.Instance);
     }
 }
