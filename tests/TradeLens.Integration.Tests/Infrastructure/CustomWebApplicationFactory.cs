@@ -19,8 +19,6 @@ public sealed class CustomWebApplicationFactory
     public static readonly Guid TestPortfolioId =
         Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private static readonly SemaphoreSlim DatabaseInitializationLock = new(1, 1);
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -59,35 +57,26 @@ public sealed class CustomWebApplicationFactory
 
     public async Task SeedAsync()
     {
-        await DatabaseInitializationLock.WaitAsync();
+        await IntegrationTestDatabase.InitializeAsync(Services);
 
-        try
+        using var scope = Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<TradeLensDbContext>();
+
+        var portfolio = await dbContext.Portfolios
+            .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
+
+        if (portfolio is null)
         {
-            using var scope = Services.CreateScope();
+            portfolio = new Portfolio(
+                TestPortfolioId,
+                TestUserId,
+                "Integration Test Portfolio");
 
-            var dbContext = scope.ServiceProvider
-                .GetRequiredService<TradeLensDbContext>();
+            dbContext.Portfolios.Add(portfolio);
 
-            await dbContext.Database.MigrateAsync();
-
-            var portfolio = await dbContext.Portfolios
-                .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
-
-            if (portfolio is null)
-            {
-                portfolio = new Portfolio(
-                    TestPortfolioId,
-                    TestUserId,
-                    "Integration Test Portfolio");
-
-                dbContext.Portfolios.Add(portfolio);
-
-                await dbContext.SaveChangesAsync();
-            }
-        }
-        finally
-        {
-            DatabaseInitializationLock.Release();
+            await dbContext.SaveChangesAsync();
         }
     }
 }

@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using TradeLens.Infrastructure.Persistence;
 
 namespace TradeLens.Integration.Tests.Infrastructure;
 
@@ -34,11 +31,6 @@ public sealed class JwtWebApplicationFactory
 
     public async Task InitializeDatabaseAsync()
     {
-        using var scope = Services.CreateScope();
-
-        var dbContext = scope.ServiceProvider
-            .GetRequiredService<TradeLensDbContext>();
-
-        await dbContext.Database.MigrateAsync();
+        await IntegrationTestDatabase.InitializeAsync(Services);
     }
 }
