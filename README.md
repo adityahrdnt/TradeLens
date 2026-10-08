@@ -1350,7 +1350,6 @@ This provides auditability without modeling every corporate action amendment as 
 ## Planned
 
 * Market-hours-aware synchronization strategy
-* Health checks
 * Monitoring
 * Production Docker deployment
 * Configuration management
@@ -1418,7 +1417,7 @@ This provides auditability without modeling every corporate action amendment as 
 * [x] Integration testing
 * [x] Structured logging
 * [x] Traceability and correlation IDs
-* [ ] Health checks
+* [x] Health checks
 * [ ] Monitoring
 
 ### Phase 6 — API Completeness
@@ -1457,7 +1456,7 @@ This provides auditability without modeling every corporate action amendment as 
 
 * [ ] Production Docker deployment
 * [ ] Configuration management
-* [ ] Health checks
+* [ ] Production health monitoring
 * [ ] Monitoring
 * [ ] CI/CD
 * [ ] Operational documentation

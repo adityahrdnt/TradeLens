@@ -222,6 +222,10 @@ else
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TradeLensExceptionHandler>();
 
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("TradeLens")!);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -240,6 +244,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
 
 app.Run();
 
