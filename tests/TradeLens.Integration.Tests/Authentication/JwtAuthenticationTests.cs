@@ -92,6 +92,8 @@ public sealed class JwtAuthenticationTests
     {
         await using var factory = new JwtWebApplicationFactory();
 
+        await factory.InitializeDatabaseAsync();
+
         using var client = factory.CreateClient();
 
         var otherUserId = Guid.Parse(
