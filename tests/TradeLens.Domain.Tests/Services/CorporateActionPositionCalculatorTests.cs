@@ -308,6 +308,73 @@ public class CorporateActionPositionCalculatorTests
     }
 
     [Fact]
+    public void VoidedTransaction_ShouldBeIgnored()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var corporateAction = new CorporateAction(
+            Guid.NewGuid(),
+            instrumentId,
+            CorporateActionType.StockSplit,
+            2,
+            1,
+            new DateOnly(2026, 9, 10),
+            new DateOnly(2026, 9, 11),
+            new DateOnly(2026, 9, 12),
+            userId,
+            DateTimeOffset.UtcNow);
+
+        corporateAction.Apply(
+            DateTimeOffset.UtcNow,
+            userId);
+
+        var activeTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 5),
+            1,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var voidedTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            500,
+            5_000m,
+            0m,
+            new DateOnly(2026, 9, 6),
+            2,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        voidedTransaction.Void("Test void");
+
+        var calculator = new CorporateActionPositionCalculator(
+            new PositionCalculator(),
+            new CorporateActionCalculator());
+
+        var result = calculator.Calculate(
+            corporateAction,
+            new[] { activeTransaction, voidedTransaction });
+
+        result.Quantity.Should().Be(200);
+        result.CostBasis.Should().Be(1_000_000m);
+        result.AveragePrice.Should().Be(5_000m);
+        result.RealizedPnl.Should().Be(0m);
+    }
+
+    [Fact]
     public void Calculate_ShouldFail_WhenCorporateActionIsNotApplied()
     {
         var portfolioId = Guid.NewGuid();
