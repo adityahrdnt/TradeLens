@@ -19,8 +19,6 @@ public sealed class CustomWebApplicationFactory
     public static readonly Guid TestPortfolioId =
         Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private static readonly SemaphoreSlim DatabaseInitializationLock = new(1, 1);
-
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -59,9 +57,7 @@ public sealed class CustomWebApplicationFactory
 
     public async Task SeedAsync()
     {
-        await DatabaseInitializationLock.WaitAsync();
-
-        try
+        await IntegrationTestDatabase.ExecuteAsync(async () =>
         {
             using var scope = Services.CreateScope();
 
@@ -84,10 +80,6 @@ public sealed class CustomWebApplicationFactory
 
                 await dbContext.SaveChangesAsync();
             }
-        }
-        finally
-        {
-            DatabaseInitializationLock.Release();
-        }
+        });
     }
 }
