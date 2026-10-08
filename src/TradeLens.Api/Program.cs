@@ -38,6 +38,7 @@ using TradeLens.Infrastructure.Persistence;
 using TradeLens.Infrastructure.Persistence.Repositories;
 using TradeLens.Infrastructure.Repositories;
 using TradeLens.Infrastructure.Services;
+using TradeLens.Api.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -223,8 +224,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<TradeLensExceptionHandler>();
 
 builder.Services.AddHealthChecks()
-    .AddNpgSql(
-        builder.Configuration.GetConnectionString("TradeLens")!);
+    .AddCheck<DatabaseHealthCheck>("database");
 
 var app = builder.Build();
 
