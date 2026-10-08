@@ -57,26 +57,29 @@ public sealed class CustomWebApplicationFactory
 
     public async Task SeedAsync()
     {
-        await IntegrationTestDatabase.InitializeAsync(Services);
-
-        using var scope = Services.CreateScope();
-
-        var dbContext = scope.ServiceProvider
-            .GetRequiredService<TradeLensDbContext>();
-
-        var portfolio = await dbContext.Portfolios
-            .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
-
-        if (portfolio is null)
+        await IntegrationTestDatabase.ExecuteAsync(async () =>
         {
-            portfolio = new Portfolio(
-                TestPortfolioId,
-                TestUserId,
-                "Integration Test Portfolio");
+            using var scope = Services.CreateScope();
 
-            dbContext.Portfolios.Add(portfolio);
+            var dbContext = scope.ServiceProvider
+                .GetRequiredService<TradeLensDbContext>();
 
-            await dbContext.SaveChangesAsync();
-        }
+            await dbContext.Database.MigrateAsync();
+
+            var portfolio = await dbContext.Portfolios
+                .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
+
+            if (portfolio is null)
+            {
+                portfolio = new Portfolio(
+                    TestPortfolioId,
+                    TestUserId,
+                    "Integration Test Portfolio");
+
+                dbContext.Portfolios.Add(portfolio);
+
+                await dbContext.SaveChangesAsync();
+            }
+        });
     }
 }

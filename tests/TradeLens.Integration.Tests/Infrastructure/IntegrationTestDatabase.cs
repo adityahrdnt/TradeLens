@@ -11,9 +11,7 @@ public static class IntegrationTestDatabase
     public static async Task InitializeAsync(
         IServiceProvider services)
     {
-        await InitializationLock.WaitAsync();
-
-        try
+        await ExecuteAsync(async () =>
         {
             using var scope = services.CreateScope();
 
@@ -21,6 +19,17 @@ public static class IntegrationTestDatabase
                 .GetRequiredService<TradeLensDbContext>();
 
             await dbContext.Database.MigrateAsync();
+        });
+    }
+
+    public static async Task ExecuteAsync(
+        Func<Task> action)
+    {
+        await InitializationLock.WaitAsync();
+
+        try
+        {
+            await action();
         }
         finally
         {
