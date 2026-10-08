@@ -186,6 +186,54 @@ public class PositionCalculatorTests
     }
 
     [Fact]
+    public void VoidedTransaction_ShouldBeIgnored()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var activeTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 1),
+            1,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var voidedTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            500,
+            5_000m,
+            0m,
+            new DateOnly(2026, 9, 2),
+            2,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        voidedTransaction.Void("Test void");
+
+        var calculator = new PositionCalculator();
+
+        var result = calculator.Calculate(
+            new[] { activeTransaction, voidedTransaction });
+
+        result.Quantity.Should().Be(100);
+        result.CostBasis.Should().Be(1_000_000m);
+        result.AveragePrice.Should().Be(10_000m);
+        result.RealizedPnl.Should().Be(0m);
+    }
+
+    [Fact]
     public void FullSell_ShouldCreateZeroPosition()
     {
         var portfolioId = Guid.NewGuid();
