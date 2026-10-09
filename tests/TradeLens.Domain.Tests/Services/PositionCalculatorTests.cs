@@ -234,6 +234,55 @@ public class PositionCalculatorTests
     }
 
     [Fact]
+    public void CorrectedTransaction_ShouldIgnoreOriginalTransaction()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var originalTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 1),
+            1,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var correctedTransaction = Transaction.CreateCorrection(
+            Guid.NewGuid(),
+            originalTransaction,
+            120,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 1),
+            1,
+            userId,
+            DateTimeOffset.UtcNow,
+            "Incorrect quantity");
+
+        originalTransaction.Supersede(
+            DateTimeOffset.UtcNow,
+            userId,
+            "Incorrect quantity");
+
+        var calculator = new PositionCalculator();
+
+        var result = calculator.Calculate(
+            new[] { originalTransaction, correctedTransaction });
+
+        result.Quantity.Should().Be(120);
+        result.CostBasis.Should().Be(1_200_000m);
+        result.AveragePrice.Should().Be(10_000m);
+        result.RealizedPnl.Should().Be(0m);
+    }
+
+    [Fact]
     public void FullSell_ShouldCreateZeroPosition()
     {
         var portfolioId = Guid.NewGuid();
