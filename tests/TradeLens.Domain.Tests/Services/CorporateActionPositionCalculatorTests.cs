@@ -253,6 +253,94 @@ public class CorporateActionPositionCalculatorTests
     }
 
     [Fact]
+    public void CorrectedTransactionAfterEffectiveDate_ShouldReplayCorrection_FromAdjustedPosition()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.UtcNow;
+
+        var corporateAction = new CorporateAction(
+            Guid.NewGuid(),
+            instrumentId,
+            CorporateActionType.StockSplit,
+            2,
+            1,
+            new DateOnly(2026, 9, 10),
+            new DateOnly(2026, 9, 11),
+            new DateOnly(2026, 9, 12),
+            userId,
+            createdAt);
+
+        corporateAction.Apply(createdAt, userId);
+
+        var buyTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 5),
+            1,
+            userId,
+            createdAt);
+
+        var originalSell = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Sell,
+            50,
+            8_000m,
+            0m,
+            new DateOnly(2026, 9, 13),
+            2,
+            userId,
+            createdAt);
+
+        var correctedSell = Transaction.CreateCorrection(
+            Guid.NewGuid(),
+            originalSell,
+            30,
+            8_000m,
+            0m,
+            new DateOnly(2026, 9, 13),
+            3,
+            userId,
+            createdAt,
+            "Incorrect quantity");
+
+        originalSell.Supersede(
+            DateTimeOffset.UtcNow,
+            userId,
+            "Incorrect quantity");
+
+        var transactions = new[]
+        {
+            buyTransaction,
+            originalSell,
+            correctedSell
+        };
+
+        var calculator = new CorporateActionPositionCalculator(
+            new PositionCalculator(),
+            new CorporateActionCalculator());
+
+        var result = calculator.Calculate(
+            corporateAction,
+            transactions);
+
+        result.Quantity.Should().Be(170);
+        result.CostBasis.Should().Be(850_000m);
+        result.AveragePrice.Should().Be(5_000m);
+        result.RealizedPnl.Should().Be(90_000m);
+    }
+
+    [Fact]
     public void StockSplit_ShouldFloorFractionalResult()
     {
         var portfolioId = Guid.NewGuid();
