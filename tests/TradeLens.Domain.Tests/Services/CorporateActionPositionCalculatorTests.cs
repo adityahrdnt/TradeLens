@@ -341,6 +341,73 @@ public class CorporateActionPositionCalculatorTests
     }
 
     [Fact]
+    public void VoidedTransactionAfterEffectiveDate_ShouldBeIgnored()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.UtcNow;
+
+        var corporateAction = new CorporateAction(
+            Guid.NewGuid(),
+            instrumentId,
+            CorporateActionType.StockSplit,
+            2,
+            1,
+            new DateOnly(2026, 9, 10),
+            new DateOnly(2026, 9, 11),
+            new DateOnly(2026, 9, 12),
+            userId,
+            createdAt);
+
+        corporateAction.Apply(createdAt, userId);
+
+        var buyTransaction = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 9, 5),
+            1,
+            userId,
+            createdAt);
+
+        var voidedSell = new Transaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Sell,
+            50,
+            8_000m,
+            0m,
+            new DateOnly(2026, 9, 13),
+            2,
+            userId,
+            createdAt);
+
+        voidedSell.Void("Incorrect transaction");
+
+        var calculator = new CorporateActionPositionCalculator(
+            new PositionCalculator(),
+            new CorporateActionCalculator());
+
+        var result = calculator.Calculate(
+            corporateAction,
+            new[] { buyTransaction, voidedSell });
+
+        result.Quantity.Should().Be(200);
+        result.CostBasis.Should().Be(1_000_000m);
+        result.AveragePrice.Should().Be(5_000m);
+        result.RealizedPnl.Should().Be(0m);
+    }
+
+
+    [Fact]
     public void StockSplit_ShouldFloorFractionalResult()
     {
         var portfolioId = Guid.NewGuid();
