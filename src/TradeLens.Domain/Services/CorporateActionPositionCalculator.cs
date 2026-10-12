@@ -31,13 +31,13 @@ public class CorporateActionPositionCalculator
             .ThenBy(x => x.Sequence)
             .ToList();
 
-        var transactionsThroughRecordDate = orderedTransactions
-            .Where(x => x.TransactionDate <= corporateAction.RecordDate)
+        var transactionsThroughEligibilityDate = orderedTransactions
+            .Where(x => x.TransactionDate <= corporateAction.EligibilityDate)
             .ToList();
 
-        var transactionsBetweenRecordAndEffectiveDate = orderedTransactions
+        var transactionsBetweenEligibilityAndEffectiveDate = orderedTransactions
             .Where(x =>
-                x.TransactionDate > corporateAction.RecordDate &&
+                x.TransactionDate > corporateAction.EligibilityDate &&
                 x.TransactionDate <= corporateAction.EffectiveDate)
             .ToList();
 
@@ -45,23 +45,23 @@ public class CorporateActionPositionCalculator
             .Where(x => x.TransactionDate > corporateAction.EffectiveDate)
             .ToList();
 
-        var positionAtRecordDate =
+        var positionAtEligibilityDate =
             _positionCalculator.Calculate(
-                transactionsThroughRecordDate);
+                transactionsThroughEligibilityDate);
 
         var positionBeforeCorporateAction =
             _positionCalculator.Calculate(
-                transactionsBetweenRecordAndEffectiveDate,
-                positionAtRecordDate);
+                transactionsBetweenEligibilityAndEffectiveDate,
+                positionAtEligibilityDate);
 
         var resultingEligibleQuantity =
             _corporateActionCalculator.CalculateResultingQuantity(
                 corporateAction,
-                positionAtRecordDate.Quantity);
+                positionAtEligibilityDate.Quantity);
 
         var corporateActionQuantityAdjustment =
             resultingEligibleQuantity -
-            positionAtRecordDate.Quantity;
+            positionAtEligibilityDate.Quantity;
 
         var adjustedQuantity =
             positionBeforeCorporateAction.Quantity +

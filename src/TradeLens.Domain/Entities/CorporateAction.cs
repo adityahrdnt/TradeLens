@@ -15,6 +15,8 @@ public class CorporateAction
 
     public int Denominator { get; private set; }
 
+    public DateOnly EligibilityDate { get; private set; }
+
     public DateOnly RecordDate { get; private set; }
 
     public DateOnly ExDate { get; private set; }
@@ -49,6 +51,7 @@ public class CorporateAction
         CorporateActionType type,
         int numerator,
         int denominator,
+        DateOnly eligibilityDate,
         DateOnly recordDate,
         DateOnly exDate,
         DateOnly effectiveDate,
@@ -73,10 +76,6 @@ public class CorporateAction
             throw new DomainException(
                 "Corporate action created by is required.");
 
-        if (exDate < recordDate)
-            throw new DomainException(
-                "Corporate action ex-date cannot be earlier than record date.");
-
         if (effectiveDate < exDate)
             throw new DomainException(
                 "Corporate action effective date cannot be earlier than ex-date.");
@@ -86,6 +85,7 @@ public class CorporateAction
         Type = type;
         Numerator = numerator;
         Denominator = denominator;
+        EligibilityDate = eligibilityDate;
         RecordDate = recordDate;
         ExDate = exDate;
         OriginalEffectiveDate = effectiveDate;
@@ -122,6 +122,8 @@ public class CorporateAction
         int NewNumerator,
         int PreviousDenominator,
         int NewDenominator,
+        DateOnly PreviousEligibilityDate,
+        DateOnly NewEligibilityDate,
         DateOnly PreviousRecordDate,
         DateOnly NewRecordDate,
         DateOnly PreviousExDate,
@@ -130,6 +132,7 @@ public class CorporateAction
         DateOnly NewEffectiveDate) Correct(
         int newNumerator,
         int newDenominator,
+        DateOnly newEligibilityDate,
         DateOnly newRecordDate,
         DateOnly newExDate,
         DateOnly newEffectiveDate)
@@ -146,22 +149,20 @@ public class CorporateAction
             throw new DomainException(
                 "Corporate action denominator must be greater than zero.");
 
-        if (newExDate < newRecordDate)
-            throw new DomainException(
-                "Corporate action ex-date cannot be earlier than record date.");
-
         if (newEffectiveDate < newExDate)
             throw new DomainException(
                 "Corporate action effective date cannot be earlier than ex-date.");
 
         var previousNumerator = Numerator;
         var previousDenominator = Denominator;
+        var previousEligibilityDate = EligibilityDate;
         var previousRecordDate = RecordDate;
         var previousExDate = ExDate;
         var previousEffectiveDate = EffectiveDate;
 
         Numerator = newNumerator;
         Denominator = newDenominator;
+        EligibilityDate = newEligibilityDate;
         RecordDate = newRecordDate;
         ExDate = newExDate;
         EffectiveDate = newEffectiveDate;
@@ -171,6 +172,8 @@ public class CorporateAction
             Numerator,
             previousDenominator,
             Denominator,
+            previousEligibilityDate,
+            EligibilityDate,
             previousRecordDate,
             RecordDate,
             previousExDate,

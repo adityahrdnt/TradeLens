@@ -116,6 +116,12 @@ public class CorporateActionChangeTests
         var newRecordDate =
             new DateOnly(2026, 10, 2);
 
+        var previousEligibilityDate =
+            new DateOnly(2026, 9, 30);
+
+        var newEligibilityDate =
+            new DateOnly(2026, 10, 1);
+
         var previousExDate =
             new DateOnly(2026, 10, 3);
 
@@ -136,6 +142,8 @@ public class CorporateActionChangeTests
                 2,
                 10,
                 10,
+                previousEligibilityDate,
+                newEligibilityDate,
                 previousRecordDate,
                 newRecordDate,
                 previousExDate,
@@ -157,6 +165,12 @@ public class CorporateActionChangeTests
 
         change.PreviousDenominator.Should().Be(10);
         change.NewDenominator.Should().Be(10);
+
+        change.PreviousEligibilityDate.Should().Be(
+            previousEligibilityDate);
+
+        change.NewEligibilityDate.Should().Be(
+            newEligibilityDate);
 
         change.PreviousRecordDate.Should().Be(
             previousRecordDate);
@@ -194,6 +208,8 @@ public class CorporateActionChangeTests
                 2,
                 10,
                 10,
+                new DateOnly(2026, 9, 30),
+                new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 2),
                 new DateOnly(2026, 10, 3),
@@ -221,6 +237,8 @@ public class CorporateActionChangeTests
                 2,
                 0,
                 10,
+                new DateOnly(2026, 9, 30),
+                new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 2),
                 new DateOnly(2026, 10, 3),
@@ -238,30 +256,29 @@ public class CorporateActionChangeTests
     }
 
     [Fact]
-    public void CreateCorrection_WhenExDateIsBeforeRecordDate_ShouldThrowDomainException()
+    public void CreateCorrection_WhenExDateIsBeforeRecordDate_ShouldCreateSnapshot()
     {
-        var action = () =>
-            CorporateActionChange.CreateCorrection(
-                Guid.NewGuid(),
-                CorporateActionId,
-                1,
-                2,
-                10,
-                10,
-                new DateOnly(2026, 10, 5),
-                new DateOnly(2026, 10, 5),
-                new DateOnly(2026, 10, 4),
-                new DateOnly(2026, 10, 6),
-                new DateOnly(2026, 10, 7),
-                new DateOnly(2026, 10, 8),
-                "Correction.",
-                ChangedAt,
-                ChangedBy);
+        var change = CorporateActionChange.CreateCorrection(
+            Guid.NewGuid(),
+            CorporateActionId,
+            1,
+            2,
+            10,
+            10,
+            new DateOnly(2026, 4, 8),  // Previous eligibility date
+            new DateOnly(2026, 4, 8),  // New eligibility date
+            new DateOnly(2026, 4, 10), // Previous record date
+            new DateOnly(2026, 4, 10), // New record date
+            new DateOnly(2026, 4, 9),  // Previous ex-date
+            new DateOnly(2026, 4, 9),  // New ex-date
+            new DateOnly(2026, 4, 13), // Previous effective date
+            new DateOnly(2026, 4, 13), // New effective date
+            "Correction.",
+            ChangedAt,
+            ChangedBy);
 
-        action.Should()
-            .Throw<DomainException>()
-            .WithMessage(
-                "Corporate action ex-date cannot be earlier than record date.");
+        change.PreviousExDate.Should().Be(new DateOnly(2026, 4, 9));
+        change.PreviousRecordDate.Should().Be(new DateOnly(2026, 4, 10));
     }
 
     [Fact]
@@ -275,6 +292,8 @@ public class CorporateActionChangeTests
                 2,
                 10,
                 10,
+                new DateOnly(2026, 9, 30),
+                new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 1),
                 new DateOnly(2026, 10, 2),
                 new DateOnly(2026, 10, 3),

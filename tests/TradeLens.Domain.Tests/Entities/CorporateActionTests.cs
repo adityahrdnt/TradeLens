@@ -28,9 +28,10 @@ public class CorporateActionTests
             CorporateActionType.StockSplit,
             2,
             1,
-            new DateOnly(2026, 10, 10),
-            new DateOnly(2026, 10, 13),
-            new DateOnly(2026, 10, 15),
+            new DateOnly(2026, 10, 9),  // EligibilityDate
+            new DateOnly(2026, 10, 10), // RecordDate
+            new DateOnly(2026, 10, 13), // ExDate
+            new DateOnly(2026, 10, 15), // EffectiveDate
             UserId,
             CreatedAt);
 
@@ -39,6 +40,7 @@ public class CorporateActionTests
         action.Type.Should().Be(CorporateActionType.StockSplit);
         action.Numerator.Should().Be(2);
         action.Denominator.Should().Be(1);
+        action.EligibilityDate.Should().Be(new DateOnly(2026, 10, 9));
         action.RecordDate.Should().Be(new DateOnly(2026, 10, 10));
         action.ExDate.Should().Be(new DateOnly(2026, 10, 13));
         action.EffectiveDate.Should().Be(new DateOnly(2026, 10, 15));
@@ -61,6 +63,7 @@ public class CorporateActionTests
             CorporateActionType.StockSplit,
             0,
             1,
+            new DateOnly(2026, 10, 9),
             new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 13),
             new DateOnly(2026, 10, 15),
@@ -81,6 +84,7 @@ public class CorporateActionTests
             CorporateActionType.StockSplit,
             2,
             0,
+            new DateOnly(2026, 10, 9),
             new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 13),
             new DateOnly(2026, 10, 15),
@@ -93,23 +97,24 @@ public class CorporateActionTests
     }
 
     [Fact]
-    public void Constructor_ShouldRejectExDateBeforeRecordDate()
+    public void Constructor_ShouldAcceptExDateBeforeRecordDate()
     {
-        var act = () => new CorporateAction(
+        var action = new CorporateAction(
             Id,
             InstrumentId,
             CorporateActionType.StockSplit,
-            2,
+            25,
             1,
-            new DateOnly(2026, 10, 10),
-            new DateOnly(2026, 10, 9),
-            new DateOnly(2026, 10, 15),
+            new DateOnly(2026, 4, 8),
+            new DateOnly(2026, 4, 10),
+            new DateOnly(2026, 4, 9),
+            new DateOnly(2026, 4, 13),
             UserId,
             CreatedAt);
 
-        act.Should()
-            .Throw<DomainException>()
-            .WithMessage("Corporate action ex-date cannot be earlier than record date.");
+        action.RecordDate.Should().Be(new DateOnly(2026, 4, 10));
+        action.ExDate.Should().Be(new DateOnly(2026, 4, 9));
+        action.EffectiveDate.Should().Be(new DateOnly(2026, 4, 13));
     }
 
     [Fact]
@@ -121,6 +126,7 @@ public class CorporateActionTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 10, 9),
             new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 13),
             new DateOnly(2026, 10, 12),
@@ -212,6 +218,7 @@ public class CorporateActionTests
         var result = action.Correct(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16));
@@ -221,6 +228,12 @@ public class CorporateActionTests
 
         result.PreviousDenominator.Should().Be(1);
         result.NewDenominator.Should().Be(2);
+
+        result.PreviousEligibilityDate.Should()
+            .Be(new DateOnly(2026, 10, 9));
+
+        result.NewEligibilityDate.Should()
+            .Be(new DateOnly(2026, 10, 10));
 
         result.PreviousRecordDate.Should()
             .Be(new DateOnly(2026, 10, 10));
@@ -242,6 +255,8 @@ public class CorporateActionTests
 
         action.Numerator.Should().Be(3);
         action.Denominator.Should().Be(2);
+        action.EligibilityDate.Should()
+            .Be(new DateOnly(2026, 10, 10));
         action.RecordDate.Should()
             .Be(new DateOnly(2026, 10, 11));
         action.ExDate.Should()
@@ -278,6 +293,7 @@ public class CorporateActionTests
         var act = () => action.Correct(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16));
@@ -308,6 +324,7 @@ public class CorporateActionTests
         var act = () => action.Correct(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16));
@@ -326,6 +343,7 @@ public class CorporateActionTests
         var act = () => action.Correct(
             0,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16));
@@ -344,6 +362,7 @@ public class CorporateActionTests
         var act = () => action.Correct(
             3,
             0,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16));
@@ -355,21 +374,22 @@ public class CorporateActionTests
     }
 
     [Fact]
-    public void Correct_ShouldRejectExDateBeforeRecordDate()
+    public void Correct_ShouldAcceptExDateBeforeRecordDate()
     {
         var action = CreateAction();
 
-        var act = () => action.Correct(
-            3,
-            2,
-            new DateOnly(2026, 10, 14),
-            new DateOnly(2026, 10, 13),
-            new DateOnly(2026, 10, 16));
+        action.Correct(
+            25,
+            1,
+            new DateOnly(2026, 4, 8),
+            new DateOnly(2026, 4, 10),
+            new DateOnly(2026, 4, 9),
+            new DateOnly(2026, 4, 13));
 
-        act.Should()
-            .Throw<DomainException>()
-            .WithMessage(
-                "Corporate action ex-date cannot be earlier than record date.");
+        action.EligibilityDate.Should().Be(new DateOnly(2026, 4, 8));
+        action.RecordDate.Should().Be(new DateOnly(2026, 4, 10));
+        action.ExDate.Should().Be(new DateOnly(2026, 4, 9));
+        action.EffectiveDate.Should().Be(new DateOnly(2026, 4, 13));
     }
 
     [Fact]
@@ -380,6 +400,7 @@ public class CorporateActionTests
         var act = () => action.Correct(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 13));
@@ -390,6 +411,25 @@ public class CorporateActionTests
                 "Corporate action effective date cannot be earlier than ex-date.");
     }
 
+    [Fact]
+    public void Constructor_ShouldAcceptDssaStockSplitSchedule()
+    {
+        var act = () => new CorporateAction(
+            Id,
+            InstrumentId,
+            CorporateActionType.StockSplit,
+            25,
+            1,
+            new DateOnly(2026, 4, 8),
+            new DateOnly(2026, 4, 10),
+            new DateOnly(2026, 4, 9),
+            new DateOnly(2026, 4, 13),
+            UserId,
+            CreatedAt);
+
+        act.Should().NotThrow();
+    }
+
     private static CorporateAction CreateAction()
     {
         return new CorporateAction(
@@ -398,6 +438,7 @@ public class CorporateActionTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 10, 9),
             new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 13),
             new DateOnly(2026, 10, 15),
