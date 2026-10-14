@@ -7,6 +7,7 @@ public sealed record CreateCorporateActionRequest(
     CorporateActionType Type,
     int Numerator,
     int Denominator,
+    DateOnly EligibilityDate,
     DateOnly RecordDate,
     DateOnly ExDate,
     DateOnly EffectiveDate);

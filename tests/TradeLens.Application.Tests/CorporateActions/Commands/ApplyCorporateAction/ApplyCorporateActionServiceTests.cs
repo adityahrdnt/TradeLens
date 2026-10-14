@@ -28,6 +28,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -210,6 +211,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -339,6 +341,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -470,6 +473,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -585,6 +589,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -653,6 +658,7 @@ public class ApplyCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -689,6 +695,106 @@ public class ApplyCorporateActionServiceTests
         await act
             .Should()
             .ThrowAsync<DomainException>();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldUseEligibilityDate_WhenApplyingStockSplit()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+
+        var corporateAction = new CorporateAction(
+            Guid.NewGuid(),
+            instrumentId,
+            CorporateActionType.StockSplit,
+            25,
+            1,
+            new DateOnly(2026, 4, 8),  // EligibilityDate
+            new DateOnly(2026, 4, 10),  // RecordDate
+            new DateOnly(2026, 4, 9), // ExDate
+            new DateOnly(2026, 4, 13), // EffectiveDate
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var eligibleBuy = new DomainTransaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            100,
+            10_000m,
+            0m,
+            new DateOnly(2026, 4, 8),
+            1,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var exDateBuy = new DomainTransaction(
+            Guid.NewGuid(),
+            portfolioId,
+            Guid.NewGuid(),
+            instrumentId,
+            TransactionType.Buy,
+            10,
+            4_000m,
+            0m,
+            new DateOnly(2026, 4, 9),
+            2,
+            userId,
+            DateTimeOffset.UtcNow);
+
+        var corporateActionRepository =
+            new FakeCorporateActionRepository();
+
+        corporateActionRepository.CorporateActions.Add(
+            corporateAction);
+
+        var applicationRepository =
+            new FakeCorporateActionApplicationRepository();
+
+        var transactionRepository =
+            new FakeTransactionRepository();
+
+        transactionRepository.Transactions.Add(eligibleBuy);
+        transactionRepository.Transactions.Add(exDateBuy);
+
+        var positionRepository =
+            new FakePositionRepository();
+
+        var unitOfWork =
+            new FakeUnitOfWork();
+
+        var service = CreateService(
+            corporateActionRepository,
+            applicationRepository,
+            transactionRepository,
+            positionRepository,
+            unitOfWork);
+
+        var command = new ApplyCorporateActionCommand(
+            corporateAction.Id,
+            userId);
+
+        // Act
+        var result = await service.ExecuteAsync(command);
+
+        // Assert
+        result.AppliedPortfolioCount.Should().Be(1);
+
+        var application =
+            applicationRepository.Applications.Single();
+
+        application.EligibleQuantity.Should().Be(100);
+        application.ResultingQuantity.Should().Be(2_500);
+
+        var position = positionRepository.Positions.Single();
+
+        position.Quantity.Should().Be(2_510);
+        position.CostBasis.Should().Be(1_040_000m);
+        position.AveragePrice.Should().Be(1_040_000m / 2_510m);
     }
 
     private static ApplyCorporateActionService CreateService(

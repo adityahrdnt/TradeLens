@@ -126,6 +126,7 @@ public class CorporateActionCalculatorTests
             type,
             numerator,
             denominator,
+            new DateOnly(2026, 8, 31),
             new DateOnly(2026, 9, 1),
             new DateOnly(2026, 9, 2),
             new DateOnly(2026, 9, 3),

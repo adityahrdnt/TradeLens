@@ -34,6 +34,7 @@ public sealed class GetCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -53,6 +54,7 @@ public sealed class GetCorporateActionServiceTests
         result.Type.Should().Be(CorporateActionType.StockSplit);
         result.Numerator.Should().Be(2);
         result.Denominator.Should().Be(1);
+        result.EligibilityDate.Should().Be(new DateOnly(2026, 9, 9));
         result.RecordDate.Should().Be(new DateOnly(2026, 9, 10));
         result.ExDate.Should().Be(new DateOnly(2026, 9, 11));
         result.EffectiveDate.Should().Be(new DateOnly(2026, 9, 12));

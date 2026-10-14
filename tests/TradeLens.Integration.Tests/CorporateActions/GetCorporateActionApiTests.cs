@@ -49,6 +49,7 @@ public class GetCorporateActionApiTests
                 TradeLens.Domain.Enums.CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -104,6 +105,10 @@ public class GetCorporateActionApiTests
         Assert.Equal(
             1,
             result.Denominator);
+
+        Assert.Equal(
+            new DateOnly(2026, 9, 9),
+            result.EligibilityDate);
 
         Assert.Equal(
             new DateOnly(2026, 9, 10),

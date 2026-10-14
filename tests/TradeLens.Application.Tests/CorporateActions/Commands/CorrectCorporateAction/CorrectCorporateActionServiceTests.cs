@@ -16,6 +16,12 @@ public class CorrectCorporateActionServiceTests
         var instrumentId = Guid.NewGuid();
         var corporateActionId = Guid.NewGuid();
 
+        var originalEligibilityDate =
+            new DateOnly(2026, 9, 9);
+
+        var newEligibilityDate =
+            new DateOnly(2026, 9, 13);
+
         var originalRecordDate =
             new DateOnly(2026, 9, 10);
 
@@ -40,6 +46,7 @@ public class CorrectCorporateActionServiceTests
             CorporateActionType.StockSplit,
             2,
             1,
+            originalEligibilityDate,
             originalRecordDate,
             originalExDate,
             originalEffectiveDate,
@@ -69,6 +76,7 @@ public class CorrectCorporateActionServiceTests
                 corporateActionId,
                 3,
                 2,
+                newEligibilityDate,
                 newRecordDate,
                 newExDate,
                 newEffectiveDate,
@@ -91,6 +99,10 @@ public class CorrectCorporateActionServiceTests
         corporateAction.Denominator
             .Should()
             .Be(2);
+
+        corporateAction.EligibilityDate
+            .Should()
+            .Be(newEligibilityDate);
 
         corporateAction.RecordDate
             .Should()
@@ -142,6 +154,14 @@ public class CorrectCorporateActionServiceTests
         change.NewDenominator
             .Should()
             .Be(2);
+
+        change.PreviousEligibilityDate
+            .Should()
+            .Be(originalEligibilityDate);
+
+        change.NewEligibilityDate
+            .Should()
+            .Be(newEligibilityDate);
 
         change.PreviousRecordDate
             .Should()
@@ -210,6 +230,7 @@ public class CorrectCorporateActionServiceTests
                 corporateActionId,
                 3,
                 2,
+                new DateOnly(2026, 9, 13),
                 new DateOnly(2026, 9, 14),
                 new DateOnly(2026, 9, 15),
                 new DateOnly(2026, 9, 16),
@@ -248,6 +269,7 @@ public class CorrectCorporateActionServiceTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -281,6 +303,7 @@ public class CorrectCorporateActionServiceTests
                 corporateActionId,
                 3,
                 2,
+                new DateOnly(2026, 9, 13),
                 new DateOnly(2026, 9, 14),
                 new DateOnly(2026, 9, 15),
                 new DateOnly(2026, 9, 16),
@@ -345,6 +368,7 @@ public class CorrectCorporateActionServiceTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -379,6 +403,7 @@ public class CorrectCorporateActionServiceTests
                 corporateActionId,
                 3,
                 2,
+                new DateOnly(2026, 9, 13),
                 new DateOnly(2026, 9, 14),
                 new DateOnly(2026, 9, 15),
                 new DateOnly(2026, 9, 16),

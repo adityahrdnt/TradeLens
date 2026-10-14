@@ -19,6 +19,10 @@ public class CorporateActionChange
 
     public int? NewDenominator { get; private set; }
 
+    public DateOnly? PreviousEligibilityDate { get; private set; }
+
+    public DateOnly? NewEligibilityDate { get; private set; }
+
     public DateOnly? PreviousRecordDate { get; private set; }
 
     public DateOnly? NewRecordDate { get; private set; }
@@ -50,6 +54,8 @@ public class CorporateActionChange
         int? newNumerator,
         int? previousDenominator,
         int? newDenominator,
+        DateOnly? previousEligibilityDate,
+        DateOnly? newEligibilityDate,
         DateOnly? previousRecordDate,
         DateOnly? newRecordDate,
         DateOnly? previousExDate,
@@ -72,6 +78,8 @@ public class CorporateActionChange
             newNumerator,
             previousDenominator,
             newDenominator,
+            previousEligibilityDate,
+            newEligibilityDate,
             previousRecordDate,
             newRecordDate,
             previousExDate,
@@ -88,6 +96,9 @@ public class CorporateActionChange
 
         PreviousDenominator = previousDenominator;
         NewDenominator = newDenominator;
+
+        PreviousEligibilityDate = previousEligibilityDate;
+        NewEligibilityDate = newEligibilityDate;
 
         PreviousRecordDate = previousRecordDate;
         NewRecordDate = newRecordDate;
@@ -124,6 +135,8 @@ public class CorporateActionChange
             null,
             null,
             null,
+            null,
+            null,
             previousEffectiveDate,
             newEffectiveDate,
             reason,
@@ -138,6 +151,8 @@ public class CorporateActionChange
         int newNumerator,
         int previousDenominator,
         int newDenominator,
+        DateOnly previousEligibilityDate,
+        DateOnly newEligibilityDate,
         DateOnly previousRecordDate,
         DateOnly newRecordDate,
         DateOnly previousExDate,
@@ -156,6 +171,8 @@ public class CorporateActionChange
             newNumerator,
             previousDenominator,
             newDenominator,
+            previousEligibilityDate,
+            newEligibilityDate,
             previousRecordDate,
             newRecordDate,
             previousExDate,
@@ -196,6 +213,8 @@ public class CorporateActionChange
         int? newNumerator,
         int? previousDenominator,
         int? newDenominator,
+        DateOnly? previousEligibilityDate,
+        DateOnly? newEligibilityDate,
         DateOnly? previousRecordDate,
         DateOnly? newRecordDate,
         DateOnly? previousExDate,
@@ -217,6 +236,8 @@ public class CorporateActionChange
                     newNumerator,
                     previousDenominator,
                     newDenominator,
+                    previousEligibilityDate,
+                    newEligibilityDate,
                     previousRecordDate,
                     newRecordDate,
                     previousExDate,
@@ -254,6 +275,8 @@ public class CorporateActionChange
         int? newNumerator,
         int? previousDenominator,
         int? newDenominator,
+        DateOnly? previousEligibilityDate,
+        DateOnly? newEligibilityDate,
         DateOnly? previousRecordDate,
         DateOnly? newRecordDate,
         DateOnly? previousExDate,
@@ -265,6 +288,8 @@ public class CorporateActionChange
             !newNumerator.HasValue ||
             !previousDenominator.HasValue ||
             !newDenominator.HasValue ||
+            !previousEligibilityDate.HasValue ||
+            !newEligibilityDate.HasValue ||
             !previousRecordDate.HasValue ||
             !newRecordDate.HasValue ||
             !previousExDate.HasValue ||
@@ -279,6 +304,7 @@ public class CorporateActionChange
         ValidateCorporateActionState(
             previousNumerator.Value,
             previousDenominator.Value,
+            previousEligibilityDate.Value,
             previousRecordDate.Value,
             previousExDate.Value,
             previousEffectiveDate.Value);
@@ -286,6 +312,7 @@ public class CorporateActionChange
         ValidateCorporateActionState(
             newNumerator.Value,
             newDenominator.Value,
+            newEligibilityDate.Value,
             newRecordDate.Value,
             newExDate.Value,
             newEffectiveDate.Value);
@@ -294,6 +321,7 @@ public class CorporateActionChange
     private static void ValidateCorporateActionState(
         int numerator,
         int denominator,
+        DateOnly eligibilityDate,
         DateOnly recordDate,
         DateOnly exDate,
         DateOnly effectiveDate)
@@ -308,12 +336,6 @@ public class CorporateActionChange
         {
             throw new DomainException(
                 "Corporate action denominator must be greater than zero.");
-        }
-
-        if (exDate < recordDate)
-        {
-            throw new DomainException(
-                "Corporate action ex-date cannot be earlier than record date.");
         }
 
         if (effectiveDate < exDate)

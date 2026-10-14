@@ -68,7 +68,7 @@ public sealed class ApplyCorporateActionService
                     await _transactionRepository
                         .GetPortfolioIdsByInstrumentAsOfDateAsync(
                             corporateAction.InstrumentId,
-                            corporateAction.RecordDate,
+                            corporateAction.EligibilityDate,
                             transactionCancellationToken);
 
                 var appliedPortfolioCount = 0;
@@ -82,18 +82,18 @@ public sealed class ApplyCorporateActionService
                                 corporateAction.InstrumentId,
                                 transactionCancellationToken);
 
-                    var recordDateTransactions =
+                    var eligibilityDateTransactions =
                         transactions
                             .Where(x =>
                                 x.TransactionDate <=
-                                corporateAction.RecordDate)
+                                corporateAction.EligibilityDate)
                             .ToList();
 
-                    var recordDatePosition =
+                    var eligibilityDatePosition =
                         _positionCalculator.Calculate(
-                            recordDateTransactions);
+                            eligibilityDateTransactions);
 
-                    if (recordDatePosition.Quantity <= 0)
+                    if (eligibilityDatePosition.Quantity <= 0)
                     {
                         continue;
                     }
@@ -118,7 +118,7 @@ public sealed class ApplyCorporateActionService
                     var resultingQuantity =
                         _corporateActionCalculator.CalculateResultingQuantity(
                             corporateAction,
-                            recordDatePosition.Quantity);
+                            eligibilityDatePosition.Quantity);
 
                     var application =
                         new CorporateActionApplication(
@@ -126,7 +126,7 @@ public sealed class ApplyCorporateActionService
                             corporateAction.Id,
                             portfolioId,
                             corporateAction.InstrumentId,
-                            recordDatePosition.Quantity,
+                            eligibilityDatePosition.Quantity,
                             resultingQuantity,
                             now);
 

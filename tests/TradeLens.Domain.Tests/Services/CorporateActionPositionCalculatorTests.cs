@@ -21,6 +21,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -75,6 +76,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.ReverseSplit,
             1,
             2,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -129,6 +131,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -197,6 +200,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -266,6 +270,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -354,6 +359,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -420,6 +426,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             3,
             2,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -475,6 +482,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -542,6 +550,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),
@@ -598,6 +607,77 @@ public class CorporateActionPositionCalculatorTests
     }
 
     [Fact]
+    public void StockSplit_ShouldApplyEntitlementBasedOnHoldingBeforeExDate()
+    {
+        var portfolioId = Guid.NewGuid();
+        var instrumentId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var createdAt = DateTimeOffset.UtcNow;
+
+        var corporateAction = new CorporateAction(
+            Guid.NewGuid(),
+            instrumentId,
+            CorporateActionType.StockSplit,
+            25,
+            1,
+            new DateOnly(2026, 4, 8),  // Eligibility date
+            new DateOnly(2026, 4, 10), // Record date
+            new DateOnly(2026, 4, 9),  // Ex-date
+            new DateOnly(2026, 4, 13), // Effective date
+            userId,
+            createdAt);
+
+        corporateAction.Apply(createdAt, userId);
+
+        var transactions = new[]
+        {
+            // Shares held before the ex-date: eligible for the split.
+            new Transaction(
+                Guid.NewGuid(),
+                portfolioId,
+                Guid.NewGuid(),
+                instrumentId,
+                TransactionType.Buy,
+                100,
+                10_000m,
+                0m,
+                new DateOnly(2026, 4, 8),
+                1,
+                userId,
+                createdAt),
+
+            // Shares purchased on the ex-date: not eligible for the split.
+            new Transaction(
+                Guid.NewGuid(),
+                portfolioId,
+                Guid.NewGuid(),
+                instrumentId,
+                TransactionType.Buy,
+                10,
+                4_000m,
+                0m,
+                new DateOnly(2026, 4, 9),
+                2,
+                userId,
+                createdAt)
+        };
+
+        var calculator = new CorporateActionPositionCalculator(
+            new PositionCalculator(),
+            new CorporateActionCalculator());
+
+        var result = calculator.Calculate(
+            corporateAction,
+            transactions);
+
+        result.Quantity.Should().Be(2_510);
+        result.CostBasis.Should().Be(1_040_000m);
+        result.AveragePrice.Should().Be(
+            1_040_000m / 2_510m);
+        result.RealizedPnl.Should().Be(0m);
+    }
+
+    [Fact]
     public void Calculate_ShouldFail_WhenCorporateActionIsNotApplied()
     {
         var portfolioId = Guid.NewGuid();
@@ -610,6 +690,7 @@ public class CorporateActionPositionCalculatorTests
             CorporateActionType.StockSplit,
             2,
             1,
+            new DateOnly(2026, 9, 9),
             new DateOnly(2026, 9, 10),
             new DateOnly(2026, 9, 11),
             new DateOnly(2026, 9, 12),

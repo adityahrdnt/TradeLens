@@ -34,6 +34,9 @@ public class CorrectCorporateActionApiTests
         var originalEffectiveDate =
             new DateOnly(2026, 9, 12);
 
+        var newEligibilityDate =
+            new DateOnly(2026, 10, 10);
+
         var newRecordDate =
             new DateOnly(2026, 10, 11);
 
@@ -62,6 +65,7 @@ public class CorrectCorporateActionApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 originalRecordDate,
                 originalExDate,
                 originalEffectiveDate,
@@ -76,6 +80,7 @@ public class CorrectCorporateActionApiTests
         var request = new CorrectCorporateActionRequest(
             3,
             2,
+            newEligibilityDate,
             newRecordDate,
             newExDate,
             newEffectiveDate,
@@ -252,6 +257,7 @@ public class CorrectCorporateActionApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -270,6 +276,7 @@ public class CorrectCorporateActionApiTests
         var request = new CorrectCorporateActionRequest(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16),
@@ -301,6 +308,7 @@ public class CorrectCorporateActionApiTests
         var request = new CorrectCorporateActionRequest(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16),
@@ -349,6 +357,7 @@ public class CorrectCorporateActionApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -368,6 +377,7 @@ public class CorrectCorporateActionApiTests
         var request = new CorrectCorporateActionRequest(
             3,
             2,
+            new DateOnly(2026, 10, 10),
             new DateOnly(2026, 10, 11),
             new DateOnly(2026, 10, 14),
             new DateOnly(2026, 10, 16),

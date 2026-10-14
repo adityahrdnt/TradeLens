@@ -19,6 +19,10 @@ public sealed class CorrectCorporateActionValidator
             .GreaterThan(0)
             .WithMessage("Corporate action denominator must be greater than zero.");
 
+        RuleFor(x => x.NewEligibilityDate)
+            .NotEqual(default(DateOnly))
+            .WithMessage("New eligibility date is required.");
+
         RuleFor(x => x.NewRecordDate)
             .NotEqual(default(DateOnly))
             .WithMessage("New record date is required.");

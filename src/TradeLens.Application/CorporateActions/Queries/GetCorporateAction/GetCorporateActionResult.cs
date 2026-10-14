@@ -6,6 +6,7 @@ public sealed record GetCorporateActionResult(
     TradeLens.Domain.Enums.CorporateActionType Type,
     int Numerator,
     int Denominator,
+    DateOnly EligibilityDate,
     DateOnly RecordDate,
     DateOnly ExDate,
     DateOnly EffectiveDate,

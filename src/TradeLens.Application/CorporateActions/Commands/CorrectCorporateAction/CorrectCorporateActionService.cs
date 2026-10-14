@@ -44,6 +44,7 @@ public sealed class CorrectCorporateActionService
                     corporateAction.Correct(
                         command.NewNumerator,
                         command.NewDenominator,
+                        command.NewEligibilityDate,
                         command.NewRecordDate,
                         command.NewExDate,
                         command.NewEffectiveDate);
@@ -56,6 +57,8 @@ public sealed class CorrectCorporateActionService
                         correction.NewNumerator,
                         correction.PreviousDenominator,
                         correction.NewDenominator,
+                        correction.PreviousEligibilityDate,
+                        correction.NewEligibilityDate,
                         correction.PreviousRecordDate,
                         correction.NewRecordDate,
                         correction.PreviousExDate,

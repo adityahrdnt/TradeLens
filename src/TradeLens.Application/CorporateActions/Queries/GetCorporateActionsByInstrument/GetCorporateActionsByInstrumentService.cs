@@ -29,6 +29,7 @@ public sealed class GetCorporateActionsByInstrumentService
                     x.Type,
                     x.Numerator,
                     x.Denominator,
+                    x.EligibilityDate,
                     x.RecordDate,
                     x.ExDate,
                     x.EffectiveDate,
