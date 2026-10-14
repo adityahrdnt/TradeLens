@@ -98,17 +98,13 @@ public class CorrectTransactionServiceTests
         // Arrange
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
-        var portfolioRepository = new FakePortfolioRepository();
-        var portfolioAccessService = new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new CorrectTransactionService(
+        var service = CreateService(
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
-            unitOfWork,
-            new PositionCalculator(),
-            NullLogger<CorrectTransactionService>.Instance);
+            new Portfolio(Guid.NewGuid(), Guid.NewGuid(), "Test Portfolio"),
+            unitOfWork);
 
         var command = new CorrectTransactionCommand(
             Guid.NewGuid(),

@@ -6,7 +6,7 @@ using TradeLens.Domain.Entities;
 using TradeLens.Domain.Enums;
 using DomainTransaction = TradeLens.Domain.Entities.Transaction;
 
-namespace TradeLens.Application.Tests.Transaction.Queries.GetTransaction;
+namespace TradeLens.Application.Tests.Transactions.Queries.GetTransaction;
 
 public class GetTransactionServiceTests
 {
