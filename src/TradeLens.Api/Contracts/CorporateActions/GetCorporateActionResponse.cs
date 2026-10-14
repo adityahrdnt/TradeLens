@@ -8,6 +8,7 @@ public sealed record GetCorporateActionResponse(
     CorporateActionType Type,
     int Numerator,
     int Denominator,
+    DateOnly EligibilityDate,
     DateOnly RecordDate,
     DateOnly ExDate,
     DateOnly EffectiveDate,

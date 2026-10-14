@@ -45,6 +45,7 @@ public class CreateCorporateActionApiTests
             type = "StockSplit",
             numerator = 2,
             denominator = 1,
+            eligibilityDate = new DateOnly(2026, 9, 9),
             recordDate = new DateOnly(2026, 9, 10),
             exDate = new DateOnly(2026, 9, 11),
             effectiveDate = new DateOnly(2026, 9, 12)
@@ -160,6 +161,7 @@ public class CreateCorporateActionApiTests
             type = "StockSplit",
             numerator = 0,
             denominator = 1,
+            eligibilityDate = new DateOnly(2026, 9, 9),
             recordDate = new DateOnly(2026, 9, 10),
             exDate = new DateOnly(2026, 9, 11),
             effectiveDate = new DateOnly(2026, 9, 12)
@@ -177,7 +179,7 @@ public class CreateCorporateActionApiTests
     }
 
     [Fact]
-    public async Task PostCorporateAction_ShouldReturnBadRequest_WhenExDateIsBeforeRecordDate()
+    public async Task PostCorporateAction_ShouldReturnCreated_WhenExDateIsBeforeRecordDate()
     {
         // Arrange
         await using var factory = new CustomWebApplicationFactory();
@@ -210,6 +212,7 @@ public class CreateCorporateActionApiTests
             type = "StockSplit",
             numerator = 2,
             denominator = 1,
+            eligibilityDate = new DateOnly(2026, 9, 9),
             recordDate = new DateOnly(2026, 9, 12),
             exDate = new DateOnly(2026, 9, 11),
             effectiveDate = new DateOnly(2026, 9, 13)
@@ -222,7 +225,7 @@ public class CreateCorporateActionApiTests
 
         // Assert
         Assert.Equal(
-            HttpStatusCode.BadRequest,
+            HttpStatusCode.Created,
             response.StatusCode);
     }
 
@@ -260,6 +263,7 @@ public class CreateCorporateActionApiTests
             type = "StockSplit",
             numerator = 2,
             denominator = 1,
+            eligibilityDate = new DateOnly(2026, 9, 9),
             recordDate = new DateOnly(2026, 9, 10),
             exDate = new DateOnly(2026, 9, 12),
             effectiveDate = new DateOnly(2026, 9, 11)
@@ -292,6 +296,7 @@ public class CreateCorporateActionApiTests
             type = "StockSplit",
             numerator = 2,
             denominator = 1,
+            eligibilityDate = new DateOnly(2026, 9, 9),
             recordDate = new DateOnly(2026, 9, 10),
             exDate = new DateOnly(2026, 9, 11),
             effectiveDate = new DateOnly(2026, 9, 12)

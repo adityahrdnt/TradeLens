@@ -52,6 +52,7 @@ public class GetCorporateActionsByInstrumentApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 20),
@@ -64,6 +65,7 @@ public class GetCorporateActionsByInstrumentApiTests
                 CorporateActionType.ReverseSplit,
                 1,
                 2,
+                new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
                 new DateOnly(2026, 9, 13),
                 new DateOnly(2026, 9, 15),
@@ -76,6 +78,7 @@ public class GetCorporateActionsByInstrumentApiTests
                 CorporateActionType.BonusShares,
                 1,
                 10,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -149,6 +152,14 @@ public class GetCorporateActionsByInstrumentApiTests
         Assert.Equal(
             2,
             result[0].Denominator);
+
+        Assert.Equal(
+            new DateOnly(2026, 9, 11),
+            result[0].EligibilityDate);
+
+        Assert.Equal(
+            new DateOnly(2026, 9, 9),
+            result[1].EligibilityDate);
 
         Assert.Equal(
             new DateOnly(2026, 9, 15),
@@ -264,6 +275,7 @@ public class GetCorporateActionsByInstrumentApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -307,26 +319,30 @@ public class GetCorporateActionsByInstrumentApiTests
         Assert.NotNull(result);
         Assert.Single(result);
 
-        var resultCorporateAction  = result![0];
+        var resultCorporateAction = result![0];
 
         Assert.Equal(
             corporateActionId,
-            resultCorporateAction .CorporateActionId);
+            resultCorporateAction.CorporateActionId);
 
         Assert.Equal(
             "Applied",
-            resultCorporateAction .Status.ToString());
+            resultCorporateAction.Status.ToString());
 
         Assert.Equal(
             appliedAt,
-            resultCorporateAction .AppliedAt);
+            resultCorporateAction.AppliedAt);
 
         Assert.Equal(
             CustomWebApplicationFactory.TestUserId,
-            resultCorporateAction .AppliedBy);
+            resultCorporateAction.AppliedBy);
 
-        Assert.Null(resultCorporateAction .CancelledAt);
-        Assert.Null(resultCorporateAction .CancelledBy);
-        Assert.Null(resultCorporateAction .CancellationReason);
+        Assert.Equal(
+            new DateOnly(2026, 9, 9),
+            resultCorporateAction.EligibilityDate);
+
+        Assert.Null(resultCorporateAction.CancelledAt);
+        Assert.Null(resultCorporateAction.CancelledBy);
+        Assert.Null(resultCorporateAction.CancellationReason);
     }
 }

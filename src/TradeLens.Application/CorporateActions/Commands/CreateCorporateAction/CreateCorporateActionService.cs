@@ -46,6 +46,7 @@ public sealed class CreateCorporateActionService
                     command.Type,
                     command.Numerator,
                     command.Denominator,
+                    command.EligibilityDate,
                     command.RecordDate,
                     command.ExDate,
                     command.EffectiveDate,

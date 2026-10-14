@@ -33,6 +33,7 @@ public sealed class GetCorporateActionService
             corporateAction.Type,
             corporateAction.Numerator,
             corporateAction.Denominator,
+            corporateAction.EligibilityDate,
             corporateAction.RecordDate,
             corporateAction.ExDate,
             corporateAction.EffectiveDate,

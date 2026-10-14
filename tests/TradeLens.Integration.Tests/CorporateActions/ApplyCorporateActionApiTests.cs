@@ -62,6 +62,7 @@ public class ApplyCorporateActionApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),
@@ -128,8 +129,8 @@ public class ApplyCorporateActionApiTests
         Assert.Equal(
             1,
             result.AppliedPortfolioCount);
-            
-    // Assert - Corporate Action
+
+        // Assert - Corporate Action
         Assert.NotNull(corporateActionResult);
 
         Assert.Equal(
@@ -202,6 +203,7 @@ public class ApplyCorporateActionApiTests
                 CorporateActionType.StockSplit,
                 2,
                 1,
+                new DateOnly(2026, 9, 9),
                 new DateOnly(2026, 9, 10),
                 new DateOnly(2026, 9, 11),
                 new DateOnly(2026, 9, 12),

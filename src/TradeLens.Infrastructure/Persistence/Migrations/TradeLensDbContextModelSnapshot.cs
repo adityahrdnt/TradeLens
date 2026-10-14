@@ -56,6 +56,9 @@ namespace TradeLens.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("date");
 
+                    b.Property<DateOnly>("EligibilityDate")
+                        .HasColumnType("date");
+
                     b.Property<DateOnly>("ExDate")
                         .HasColumnType("date");
 
@@ -144,6 +147,9 @@ namespace TradeLens.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("NewEffectiveDate")
                         .HasColumnType("date");
 
+                    b.Property<DateOnly?>("NewEligibilityDate")
+                        .HasColumnType("date");
+
                     b.Property<DateOnly?>("NewExDate")
                         .HasColumnType("date");
 
@@ -157,6 +163,9 @@ namespace TradeLens.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateOnly?>("PreviousEffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("PreviousEligibilityDate")
                         .HasColumnType("date");
 
                     b.Property<DateOnly?>("PreviousExDate")

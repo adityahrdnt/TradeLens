@@ -20,6 +20,9 @@ public sealed class CreateCorporateActionCommandValidator
         RuleFor(x => x.Denominator)
             .GreaterThan(0);
 
+        RuleFor(x => x.EligibilityDate)
+            .NotEmpty();
+
         RuleFor(x => x.RecordDate)
             .NotEmpty();
 
