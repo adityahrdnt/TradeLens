@@ -8,7 +8,7 @@ using TradeLens.Application.Tests.Fakes;
 using TradeLens.Domain.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace TradeLens.Application.Tests.Transaction.Commands.AddTransaction;
+namespace TradeLens.Application.Tests.Transactions.Commands.AddTransaction;
 
 public class AddTransactionServiceTests
 {

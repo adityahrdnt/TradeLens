@@ -3,7 +3,7 @@ using TradeLens.Application.Transactions.Commands.AddTransaction;
 using TradeLens.Application.Validators;
 using TradeLens.Domain.Enums;
 
-namespace TradeLens.Application.Tests.Validators;
+namespace TradeLens.Application.Tests.Transactions.Commands.AddTransaction;
 
 public class AddTransactionCommandValidatorTests
 {

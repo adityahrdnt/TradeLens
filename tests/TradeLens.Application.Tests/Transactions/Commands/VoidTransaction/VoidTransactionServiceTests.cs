@@ -199,18 +199,13 @@ public class VoidTransactionServiceTests
         // Arrange
         var transactionRepository = new FakeTransactionRepository();
         var positionRepository = new FakePositionRepository();
-        var portfolioRepository = new FakePortfolioRepository();
-        var portfolioAccessService =
-            new FakePortfolioAccessService(portfolioRepository);
         var unitOfWork = new FakeUnitOfWork();
 
-        var service = new VoidTransactionService(
+        var service = CreateService(
             transactionRepository,
             positionRepository,
-            portfolioAccessService,
-            unitOfWork,
-            new PositionCalculator(),
-            NullLogger<VoidTransactionService>.Instance);
+            new Portfolio(Guid.NewGuid(), Guid.NewGuid(), "Test Portfolio"),
+            unitOfWork);
 
         var command = new VoidTransactionCommand(
             Guid.NewGuid(),
