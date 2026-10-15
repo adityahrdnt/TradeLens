@@ -988,6 +988,37 @@ The Docker container exposes PostgreSQL's internal port `5432` through host port
 
 ---
 
+## Production Configuration
+
+TradeLens requires environment-specific configuration for production deployment. Do not commit production secrets or credentials to source control.
+
+### Required Environment Variables
+
+Configure the following environment variables in the production hosting environment or secret manager:
+
+| Environment Variable | Description |
+|---|---|
+| `Jwt__Issuer` | Expected JWT issuer |
+| `Jwt__Audience` | Expected JWT audience |
+| `Jwt__SecretKey` | Secret key used to validate JWT signatures; must contain at least 32 characters |
+| `ConnectionStrings__TradeLens` | PostgreSQL connection string for the production database |
+
+ASP.NET Core uses double underscores (`__`) to map environment variables to configuration sections.
+
+### Security Requirements
+
+- Use a strong, randomly generated JWT signing key and store it in a secret manager or protected environment configuration.
+- Never use development credentials or test signing keys in production.
+- Restrict database network access and use credentials with only the permissions required by the application.
+- Use HTTPS for production API traffic.
+- Ensure all required configuration values are provided before starting the application. TradeLens validates JWT options at startup and requires a configured database connection string.
+
+### Deployment Status
+
+Production deployment, secret management, and production infrastructure configuration must be completed and verified before the application is considered production-ready.
+
+---
+
 ## Testing
 
 Run all tests:
@@ -1040,14 +1071,14 @@ The automated test suite currently covers:
 ### Current Test Suite
 
 ```text
-Domain:        75 tests
-Application:  134 tests
-Integration:   84 tests
+Domain:        83 tests
+Application:  135 tests
+Integration:   97 tests
 ------------------------
-Total:        293 tests
+Total:        315 tests
 ```
 
-The full solution test suite is currently passing with 290 tests.
+The full solution test suite currently passes all 314 tests, covering domain business rules, application services and validation, and integration-level behavior.
 
 ---
 
