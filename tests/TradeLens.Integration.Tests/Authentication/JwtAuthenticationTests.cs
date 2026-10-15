@@ -19,6 +19,8 @@ public sealed class JwtAuthenticationTests
     {
         await using var factory = new JwtWebApplicationFactory();
 
+        await factory.InitializeDatabaseAsync();
+
         using var client = factory.CreateClient();
 
         var token = CreateToken();
@@ -31,12 +33,12 @@ public sealed class JwtAuthenticationTests
         var response = await client.GetAsync(
             "/api/v1/transactions/00000000-0000-0000-0000-000000000000");
 
-        Assert.NotEqual(
-            System.Net.HttpStatusCode.Unauthorized,
+        Assert.Equal(
+            System.Net.HttpStatusCode.NotFound,
             response.StatusCode);
     }
 
-    private static string CreateToken()
+    private static string CreateToken(DateTime? expires = null)
     {
         var claims = new[]
         {
@@ -60,11 +62,49 @@ public sealed class JwtAuthenticationTests
             issuer: "TradeLens",
             audience: "TradeLens.Api",
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(5),
+            expires: expires ?? DateTime.UtcNow.AddMinutes(5),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler()
             .WriteToken(token);
+    }
+
+    [Fact]
+    public async Task MissingJwtToken_ShouldReturnUnauthorized()
+    {
+        await using var factory = new JwtWebApplicationFactory();
+
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(
+            "/api/v1/transactions/00000000-0000-0000-0000-000000000000");
+
+        Assert.Equal(
+            System.Net.HttpStatusCode.Unauthorized,
+            response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExpiredJwtToken_ShouldReturnUnauthorized()
+    {
+        await using var factory = new JwtWebApplicationFactory();
+
+        using var client = factory.CreateClient();
+
+        var token = CreateToken(
+            DateTime.UtcNow.AddMinutes(-5));
+
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        var response = await client.GetAsync(
+            "/api/v1/transactions/00000000-0000-0000-0000-000000000000");
+
+        Assert.Equal(
+            System.Net.HttpStatusCode.Unauthorized,
+            response.StatusCode);
     }
 
     [Fact]
@@ -85,6 +125,59 @@ public sealed class JwtAuthenticationTests
         Assert.Equal(
             System.Net.HttpStatusCode.Unauthorized,
             response.StatusCode);
+    }
+
+    [Fact]
+    public async Task JwtToken_WithInvalidSignature_ShouldReturnUnauthorized()
+    {
+        await using var factory = new JwtWebApplicationFactory();
+
+        using var client = factory.CreateClient();
+
+        var token = CreateTokenWithDifferentSigningKey();
+
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue(
+                "Bearer",
+                token);
+
+        var response = await client.GetAsync(
+            "/api/v1/transactions/00000000-0000-0000-0000-000000000000");
+
+        Assert.Equal(
+            System.Net.HttpStatusCode.Unauthorized,
+            response.StatusCode);
+    }
+
+    private static string CreateTokenWithDifferentSigningKey()
+    {
+        var claims = new[]
+        {
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                CustomWebApplicationFactory.TestUserId.ToString()),
+            new Claim(
+                ClaimTypes.Name,
+                "integration-test-user")
+        };
+
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                "Different-Integration-Test-Secret-Key-At-Least-32"));
+
+        var credentials = new SigningCredentials(
+            key,
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: "TradeLens",
+            audience: "TradeLens.Api",
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler()
+            .WriteToken(token);
     }
 
     [Fact]

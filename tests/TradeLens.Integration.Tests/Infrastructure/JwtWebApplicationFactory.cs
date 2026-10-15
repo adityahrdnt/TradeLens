@@ -23,6 +23,8 @@ public sealed class JwtWebApplicationFactory
                 ["ConnectionStrings:TradeLens"] =
                     Environment.GetEnvironmentVariable(
                         "TRADELENS_TEST_CONNECTION_STRING")
+                    ?? throw new InvalidOperationException(
+                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured.")
             };
 
             config.AddInMemoryCollection(settings);
