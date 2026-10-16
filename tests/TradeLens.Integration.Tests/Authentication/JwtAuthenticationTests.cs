@@ -19,6 +19,8 @@ public sealed class JwtAuthenticationTests
     {
         await using var factory = new JwtWebApplicationFactory();
 
+        await factory.InitializeDatabaseAsync();
+
         using var client = factory.CreateClient();
 
         var token = CreateToken();
@@ -31,12 +33,12 @@ public sealed class JwtAuthenticationTests
         var response = await client.GetAsync(
             "/api/v1/transactions/00000000-0000-0000-0000-000000000000");
 
-        Assert.NotEqual(
-            System.Net.HttpStatusCode.Unauthorized,
+        Assert.Equal(
+            System.Net.HttpStatusCode.NotFound,
             response.StatusCode);
     }
 
-    private static string CreateToken()
+    private static string CreateToken(DateTime? expires = null)
     {
         var claims = new[]
         {
@@ -60,7 +62,7 @@ public sealed class JwtAuthenticationTests
             issuer: "TradeLens",
             audience: "TradeLens.Api",
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(5),
+            expires: expires ?? DateTime.UtcNow.AddMinutes(5),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler()
