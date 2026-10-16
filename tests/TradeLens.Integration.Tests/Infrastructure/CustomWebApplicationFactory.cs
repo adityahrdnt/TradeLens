@@ -21,7 +21,7 @@ public sealed class CustomWebApplicationFactory
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment("Development");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -66,6 +66,18 @@ public sealed class CustomWebApplicationFactory
 
             var dbContext = scope.ServiceProvider
                 .GetRequiredService<TradeLensDbContext>();
+
+            var connection = dbContext.Database.GetDbConnection();
+
+            var parsedConnection =
+                new Npgsql.NpgsqlConnectionStringBuilder(
+                    connection.ConnectionString);
+
+            Console.WriteLine(
+                $"[Actual DbContext diagnostic] " +
+                $"Host={parsedConnection.Host}; " +
+                $"Port={parsedConnection.Port}; " +
+                $"Database={parsedConnection.Database}");
 
             await dbContext.Database.MigrateAsync();
 
