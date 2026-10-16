@@ -21,7 +21,7 @@ jobs:
           POSTGRES_USER: tradelens
           POSTGRES_PASSWORD: tradelens
         ports:
-          - 5433:5432
+          - 5432:5432
         options: >-
           --health-cmd="pg_isready -U tradelens -d tradelens"
           --health-interval=10s
@@ -29,7 +29,7 @@ jobs:
           --health-retries=5
 
     env:
-      TRADELENS_TEST_CONNECTION_STRING: "Host=localhost;Port=5433;Database=tradelens;Username=tradelens;Password=tradelens;"
+      TRADELENS_TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=tradelens;Username=tradelens;Password=tradelens;Pooling=true;SSL Mode=Disable;"
 
     steps:
       - name: Checkout repository
@@ -51,6 +51,13 @@ jobs:
 
       - name: Run Application Tests
         run: dotnet test tests/TradeLens.Application.Tests/TradeLens.Application.Tests.csproj --no-build --configuration Release
+
+      - name: Wait for postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres -d tradelens_test && break
+            sleep 1
+          done
 
       - name: Run Integration Tests
         run: dotnet test tests/TradeLens.Integration.Tests/TradeLens.Integration.Tests.csproj --no-build --configuration Release
