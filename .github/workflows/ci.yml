@@ -55,7 +55,7 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..30}; do
-            if pg_isready -h localhost -p 5432 -U tradelens -d tradelens; then
+            if pg_isready -h localhost -p 5433 -U tradelens -d tradelens; then
               exit 0
             fi
             sleep 1
