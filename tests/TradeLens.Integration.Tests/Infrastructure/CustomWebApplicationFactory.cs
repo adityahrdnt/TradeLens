@@ -21,18 +21,23 @@ public sealed class CustomWebApplicationFactory
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
+            var connFromEnv =
+                Environment.GetEnvironmentVariable(
+                    "TRADELENS_TEST_CONNECTION_STRING");
+
+            if (string.IsNullOrWhiteSpace(connFromEnv))
+            {
+                throw new InvalidOperationException(
+                    "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured.");
+            }
+
             var settings = new Dictionary<string, string?>
             {
-                ["ConnectionStrings:TradeLens"] =
-                    Environment.GetEnvironmentVariable(
-                        "TRADELENS_TEST_CONNECTION_STRING")
-                    ?? throw new InvalidOperationException(
-                        "TRADELENS_TEST_CONNECTION_STRING environment variable is not configured."),
-
+                ["ConnectionStrings:TradeLens"] = connFromEnv,
                 ["Jwt:Issuer"] = "TradeLens",
                 ["Jwt:Audience"] = "TradeLens.Api",
                 ["Jwt:SecretKey"] =
@@ -44,14 +49,12 @@ public sealed class CustomWebApplicationFactory
 
         builder.ConfigureServices(services =>
         {
-            var fakeMarketPriceProvider =
-                new FakeMarketPriceProvider();
+            var fakeMarketPriceProvider = new FakeMarketPriceProvider();
 
             services.AddSingleton<IMarketPriceProvider>(
                 fakeMarketPriceProvider);
 
-            services.AddSingleton(
-                fakeMarketPriceProvider);
+            services.AddSingleton(fakeMarketPriceProvider);
         });
     }
 
