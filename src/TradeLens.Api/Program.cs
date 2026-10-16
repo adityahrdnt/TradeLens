@@ -92,8 +92,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<TradeLensDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("TradeLens")));
+{
+    var connectionString =
+        builder.Configuration.GetConnectionString("TradeLens");
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "Connection string 'TradeLens' is not configured.");
+    }
+
+    options.UseNpgsql(connectionString);
+});
 
 builder.Services
     .AddControllers()
