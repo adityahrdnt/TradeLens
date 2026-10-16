@@ -21,7 +21,7 @@ jobs:
           POSTGRES_USER: tradelens
           POSTGRES_PASSWORD: tradelens
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd="pg_isready -U tradelens -d tradelens"
           --health-interval=10s
@@ -31,7 +31,7 @@ jobs:
     env:
       TRADELENS_TEST_CONNECTION_STRING: >-
         Host=localhost;
-        Port=5432;
+        Port=5433;
         Database=tradelens;
         Username=tradelens;
         Password=tradelens
