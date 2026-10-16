@@ -66,24 +66,28 @@ jobs:
       - name: Diagnose test connection configuration
         shell: bash
         run: |
-          if [[ -z "${TRADELENS_TEST_CONNECTION_STRING:-}" ]]; then
-            echo "ERROR: Test connection string is missing"
-            exit 1
-          fi
+          python3 - <<'PY'
+          import os
 
-          if [[ "$TRADELENS_TEST_CONNECTION_STRING" =~ [Pp]assword=[^;]+ ]]; then
-            echo "Connection string contains a non-empty Password field"
-          else
-            echo "ERROR: Password field is missing or empty"
-            exit 1
-          fi
+          cs = os.environ.get("TRADELENS_TEST_CONNECTION_STRING", "")
+          if not cs:
+              raise SystemExit("ERROR: Connection string is missing")
 
-          if [[ "$TRADELENS_TEST_CONNECTION_STRING" =~ [Pp]ort=5432 ]]; then
-            echo "Connection string targets port 5432"
-          else
-            echo "ERROR: Connection string does not target port 5432"
-            exit 1
-          fi
+          parts = {}
+          for item in cs.split(";"):
+              if "=" in item:
+                  key, value = item.split("=", 1)
+                  parts[key.strip().lower()] = value.strip()
+
+          if not parts.get("password"):
+              raise SystemExit("ERROR: Password field is missing or empty")
+
+          if parts.get("port") != "5432":
+              raise SystemExit("ERROR: Expected port 5432")
+
+          print("Connection string contains a non-empty Password field")
+          print("Connection string targets port 5432")
+          PY
 
       - name: Run Integration Tests
         run: dotnet test tests/TradeLens.Integration.Tests/TradeLens.Integration.Tests.csproj --no-build --configuration Release
