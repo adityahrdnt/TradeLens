@@ -63,7 +63,7 @@ jobs:
           echo "PostgreSQL did not become ready in time."
           exit 1
 
-            - name: Diagnose test connection configuration
+      - name: Diagnose test connection configuration
         shell: bash
         run: |
           if [[ -z "${TRADELENS_TEST_CONNECTION_STRING:-}" ]]; then
