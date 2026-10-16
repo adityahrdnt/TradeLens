@@ -29,12 +29,7 @@ jobs:
           --health-retries=5
 
     env:
-      TRADELENS_TEST_CONNECTION_STRING: >-
-        Host=localhost;
-        Port=5433;
-        Database=tradelens;
-        Username=tradelens;
-        Password=tradelens
+      TRADELENS_TEST_CONNECTION_STRING: "Host=localhost;Port=5433;Database=tradelens;Username=tradelens;Password=tradelens;"
 
     steps:
       - name: Checkout repository
