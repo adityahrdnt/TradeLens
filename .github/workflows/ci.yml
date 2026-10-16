@@ -21,7 +21,7 @@ jobs:
           POSTGRES_USER: tradelens
           POSTGRES_PASSWORD: tradelens
         ports:
-          - 5433:5432
+          - 5432:5432
         options: >-
           --health-cmd="pg_isready -U tradelens -d tradelens"
           --health-interval=10s
@@ -55,13 +55,35 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           for i in {1..30}; do
-            if pg_isready -h localhost -p 5433 -U tradelens -d tradelens; then
+            if pg_isready -h localhost -p 5432 -U tradelens -d tradelens; then
               exit 0
             fi
             sleep 1
           done
           echo "PostgreSQL did not become ready in time."
           exit 1
+
+            - name: Diagnose test connection configuration
+        shell: bash
+        run: |
+          if [[ -z "${TRADELENS_TEST_CONNECTION_STRING:-}" ]]; then
+            echo "ERROR: Test connection string is missing"
+            exit 1
+          fi
+
+          if [[ "$TRADELENS_TEST_CONNECTION_STRING" =~ [Pp]assword=[^;]+ ]]; then
+            echo "Connection string contains a non-empty Password field"
+          else
+            echo "ERROR: Password field is missing or empty"
+            exit 1
+          fi
+
+          if [[ "$TRADELENS_TEST_CONNECTION_STRING" =~ [Pp]ort=5432 ]]; then
+            echo "Connection string targets port 5432"
+          else
+            echo "ERROR: Connection string does not target port 5432"
+            exit 1
+          fi
 
       - name: Run Integration Tests
         run: dotnet test tests/TradeLens.Integration.Tests/TradeLens.Integration.Tests.csproj --no-build --configuration Release
