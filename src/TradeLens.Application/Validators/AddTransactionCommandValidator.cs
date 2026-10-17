@@ -38,6 +38,9 @@ public sealed class AddTransactionCommandValidator
 
         RuleFor(x => x.CreatedBy)
             .NotEmpty();
-            
+
+        RuleFor(x => x.IdempotencyKey)
+            .NotEmpty()
+            .MaximumLength(200);
     }
 }

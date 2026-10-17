@@ -135,6 +135,46 @@ public class AddTransactionCommandValidatorTests
 
         result.IsValid.Should().BeFalse();
     }
+
+    [Fact]
+    public void ShouldFail_WhenIdempotencyKeyIsEmpty()
+    {
+        var command = CreateValidCommand() with
+        {
+            IdempotencyKey = string.Empty
+        };
+
+        var result = _validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldFail_WhenIdempotencyKeyExceedsMaximumLength()
+    {
+        var command = CreateValidCommand() with
+        {
+            IdempotencyKey = new string('a', 201)
+        };
+
+        var result = _validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldFail_WhenIdempotencyKeyIsWhitespace()
+    {
+        var command = CreateValidCommand() with
+        {
+            IdempotencyKey = "   "
+        };
+
+        var result = _validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+    }
+
     private static AddTransactionCommand CreateValidCommand()
     {
         return new AddTransactionCommand(

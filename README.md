@@ -1072,13 +1072,13 @@ The automated test suite currently covers:
 
 ```text
 Domain:        83 tests
-Application:  135 tests
+Application:  138 tests
 Integration:   97 tests
 ------------------------
-Total:        315 tests
+Total:        318 tests
 ```
 
-The full solution test suite currently passes all 314 tests, covering domain business rules, application services and validation, and integration-level behavior.
+The full solution test suite currently passes all 318 tests, covering domain business rules, application services and validation, and integration-level behavior.
 
 ---
 
