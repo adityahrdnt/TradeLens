@@ -867,6 +867,12 @@ A repeated request with the same key and same payload returns the original trans
 
 A request using an existing key with a different payload is rejected as an idempotency conflict.
 
+Transaction atomicity is verified through integration tests that confirm:
+
+* Changes flushed by `SaveChangesAsync()` are rolled back when the enclosing transaction fails before commit.
+* Transaction, Position, and IdempotencyRecord are not persisted after the rollback.
+* Database state is verified using a fresh DbContext.
+
 ### Optimistic Concurrency
 
 Positions use an EF Core concurrency token.
@@ -1070,15 +1076,11 @@ The automated test suite currently covers:
 
 ### Current Test Suite
 
-```text
-Domain:        83 tests
-Application:  138 tests
-Integration:   97 tests
-------------------------
-Total:        318 tests
-```
+The automated test suite covers domain business rules, application services and validation, and PostgreSQL integration behavior.
 
-The full solution test suite currently passes all 318 tests, covering domain business rules, application services and validation, and integration-level behavior.
+The integration tests include transaction atomicity checks that verify changes are rolled back when an operation fails after `SaveChangesAsync()` but before the transaction commits.
+
+The latest verified integration test run passed all 99 tests with 0 failures and 0 skipped tests.
 
 ---
 
@@ -1234,6 +1236,8 @@ This provides auditability without modeling every corporate action amendment as 
 * [x] EF Core concurrency token
 * [x] Concurrent update detection
 * [x] HTTP 409 conflict mapping
+* [x] Transaction rollback after SaveChangesAsync
+* [x] Atomic rollback verification across transaction entities
 
 #### Authentication and Authorization
 
@@ -1367,6 +1371,9 @@ This provides auditability without modeling every corporate action amendment as 
 * [x] Corporate action cancellation integration tests
 * [x] Corporate action delay integration tests
 * [x] Corporate action correction integration tests
+* [x] Transaction atomicity and rollback
+* [x] Atomic rollback across Transaction, Position, and IdempotencyRecord
+* [x] Rollback verification using a fresh DbContext
 
 ---
 
