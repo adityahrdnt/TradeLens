@@ -495,6 +495,59 @@ public class AddTransactionServiceTests
             .Be(0);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenSaveChangesFails_ShouldPropagateException()
+    {
+        // Arrange
+        var portfolioId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        var transactionRepository = new FakeTransactionRepository();
+        var positionRepository = new FakePositionRepository();
+        var idempotencyRepository = new FakeIdempotencyRepository();
+        var transactionRequestHasher = new FakeTransactionRequestHasher();
+        var unitOfWork = new FakeUnitOfWork
+        {
+            SaveChangesException = new InvalidOperationException(
+                "Simulated database save failure.")
+        };
+
+        var service = CreateService(
+            portfolioId,
+            userId,
+            transactionRepository,
+            positionRepository,
+            idempotencyRepository,
+            transactionRequestHasher,
+            unitOfWork);
+
+        var command = new AddTransactionCommand(
+            portfolioId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            TransactionType.Buy,
+            100,
+            10_000m,
+            1_000m,
+            new DateOnly(2026, 9, 15),
+            1,
+            userId,
+            "save-failure-test-key");
+
+        // Act
+        var act = () => service.ExecuteAsync(command);
+
+        // Assert
+        await act.Should()
+            .ThrowAsync<InvalidOperationException>()
+            .WithMessage("Simulated database save failure.");
+
+        unitOfWork.SaveChangesCallCount.Should().Be(1);
+        transactionRepository.Transactions.Should().ContainSingle();
+        positionRepository.Positions.Should().ContainSingle();
+        idempotencyRepository.Records.Should().ContainSingle();
+    }
+
     private static AddTransactionService CreateService(
         Guid portfolioId,
         Guid userId,

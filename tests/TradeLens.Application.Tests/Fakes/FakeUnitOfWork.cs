@@ -8,10 +8,17 @@ public sealed class FakeUnitOfWork : IUnitOfWork
 
     public int TransactionCallCount { get; private set; }
 
+    public Exception? SaveChangesException { get; set; }
+
     public Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
         SaveChangesCallCount++;
+
+        if (SaveChangesException is not null)
+        {
+            return Task.FromException<int>(SaveChangesException);
+        }
 
         return Task.FromResult(1);
     }
