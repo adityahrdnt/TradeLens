@@ -57,6 +57,17 @@ public sealed class PositionConcurrencyTests
 
         await Assert.ThrowsAsync<PositionConcurrencyException>(
             () => unitOfWorkB.SaveChangesAsync());
+
+        await using var verificationContext =
+            IntegrationTestDbContextFactory.Create();
+
+        var persistedPosition = await verificationContext.Positions
+            .SingleAsync(x => x.Id == positionId);
+
+        Assert.Equal(100, persistedPosition.Quantity);
+        Assert.Equal(100000m, persistedPosition.CostBasis);
+        Assert.Equal(1000m, persistedPosition.AveragePrice);
+        Assert.Equal(1, persistedPosition.Version);
     }
 
     private async Task CreatePositionAsync(
