@@ -2,9 +2,12 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import {
     getPortfolios,
+    getPortfolioPositions,
     getPortfolioValuation,
     getPortfolioPnl,
     type PortfolioItem,
+    type PortfolioPositionItem,
+    type PortfolioPositionsResponse,
     type PortfolioValuation,
     type PortfolioPnl,
   } from '@/services/portfolioApi'
@@ -19,6 +22,14 @@
   const pnl = ref<PortfolioPnl | null>(null)
   const isLoadingDetails = ref(false)
   const detailsErrorMessage = ref('')
+  const positions = ref<PortfolioPositionItem[]>([])
+  const positionsPage = ref(1)
+  const positionsPageSize = 10
+  const positionsTotalCount = ref(0)
+  const positionsTotalPages = ref(0)
+  const isLoadingPositions = ref(false)
+  const positionsErrorMessage = ref('')
+  const positionsReloadKey = ref(0)
 
   const selectedPortfolio = computed(
     () =>
@@ -103,6 +114,7 @@
     valuation.value = null
     pnl.value = null
     detailsErrorMessage.value = ''
+    positionsPage.value = 1
 
     if (!portfolioId) {
       isLoadingDetails.value = false
@@ -127,6 +139,55 @@
     pnl.value = result.pnlResult
   })
 
+  watch(
+    [selectedPortfolioId, positionsPage, positionsReloadKey],
+    async ([portfolioId, page], _previousValues, onCleanup) => {
+      positions.value = []
+      positionsTotalCount.value = 0
+      positionsTotalPages.value = 0
+      positionsErrorMessage.value = ''
+
+      if (!portfolioId) {
+        isLoadingPositions.value = false
+        return
+      }
+
+      let requestIsCurrent = true
+
+      onCleanup(() => {
+        requestIsCurrent = false
+      })
+
+      isLoadingPositions.value = true
+
+      try {
+        const result: PortfolioPositionsResponse =
+          await getPortfolioPositions(
+            portfolioId,
+            page,
+            positionsPageSize,
+          )
+
+        if (!requestIsCurrent) return
+
+        positions.value = result.items
+        positionsTotalCount.value = result.totalCount
+        positionsTotalPages.value = result.totalPages
+      } catch (error) {
+        if (!requestIsCurrent) return
+
+        positionsErrorMessage.value =
+          error instanceof Error
+            ? error.message
+            : 'Terjadi kesalahan saat mengambil positions.'
+      } finally {
+        if (requestIsCurrent) {
+          isLoadingPositions.value = false
+        }
+      }
+    },
+  )
+
   function formatCurrency(value: number | null | undefined): string {
     if (value == null) {
       return 'Belum tersedia'
@@ -147,6 +208,28 @@
     return `${new Intl.NumberFormat('id-ID', {
       maximumFractionDigits: 2,
     }).format(value)}%`
+  }
+
+  function formatNumber(value: number): string {
+    return new Intl.NumberFormat('id-ID', {
+      maximumFractionDigits: 8,
+    }).format(value)
+  }
+
+  function goToPreviousPositionsPage() {
+    if (positionsPage.value > 1) {
+      positionsPage.value--
+    }
+  }
+
+  function goToNextPositionsPage() {
+    if (positionsPage.value < positionsTotalPages.value) {
+      positionsPage.value++
+    }
+  }
+
+  function reloadPositions() {
+    positionsReloadKey.value++
   }
 
   onMounted(loadPortfolios)
@@ -250,8 +333,8 @@
       </div>
 
       <p v-if="selectedPortfolio" class="selection-notice" role="status">
-        Portfolio "{{ selectedPortfolio.name }}" dipilih. Tampilan valuasi dan P&amp;L akan
-        ditambahkan pada tahap berikutnya.
+        Portfolio "{{ selectedPortfolio.name }}" dipilih. Anda dapat melihat ringkasan
+        valuasi, P&amp;L, dan daftar posisi portfolio di bawah ini.
       </p>
     </section>
 
@@ -345,6 +428,103 @@
           P&amp;L dihitung oleh backend TradeLens. Waktu data P&amp;L:
           {{ new Date(pnl.asOf).toLocaleString('id-ID') }}
         </p>
+      </template>
+    </section>
+
+    <section
+      v-if="selectedPortfolio"
+      class="portfolio-section detail-section"
+      aria-label="Portfolio positions"
+    >
+      <div class="section-header">
+        <div>
+          <h2>Portfolio Positions</h2>
+          <p>Daftar posisi untuk {{ selectedPortfolio.name }}.</p>
+        </div>
+        <span
+          v-if="!isLoadingPositions && !positionsErrorMessage"
+          class="count-label"
+        >
+          {{ positionsTotalCount }} posisi
+        </span>
+      </div>
+
+      <div v-if="isLoadingPositions" class="state-panel" role="status">
+        Memuat portfolio positions...
+      </div>
+
+      <div v-else-if="positionsErrorMessage" class="state-panel error-panel" role="alert">
+        <strong>Portfolio positions tidak dapat dimuat</strong>
+        <p>{{ positionsErrorMessage }}</p>
+        <button
+          type="button"
+          class="refresh-button"
+          @click="reloadPositions"
+        >
+          Coba lagi
+        </button>
+      </div>
+
+      <div v-else-if="positions.length === 0" class="state-panel">
+        <strong>
+          {{ positionsTotalCount === 0 ? 'Belum ada posisi' : 'Tidak ada posisi pada halaman ini' }}
+        </strong>
+        <p>
+          {{
+            positionsTotalCount === 0
+              ? 'Portfolio ini belum memiliki posisi.'
+              : 'Coba kembali ke halaman sebelumnya.'
+          }}
+        </p>
+      </div>
+
+      <template v-else>
+        <div class="positions-table-wrapper">
+          <table class="positions-table">
+            <thead>
+              <tr>
+                <th scope="col">Instrument ID</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Cost Basis</th>
+                <th scope="col">Average Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="position in positions" :key="position.positionId">
+                <td class="instrument-id">{{ position.instrumentId }}</td>
+                <td>{{ formatNumber(position.quantity) }}</td>
+                <td>{{ formatCurrency(position.costBasis) }}</td>
+                <td>{{ formatCurrency(position.averagePrice) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-controls">
+          <span class="pagination-info">
+            Halaman {{ positionsPage }} dari {{ positionsTotalPages }}
+          </span>
+
+          <div class="pagination-buttons">
+            <button
+              type="button"
+              class="refresh-button"
+              :disabled="isLoadingPositions || positionsPage <= 1"
+              @click="goToPreviousPositionsPage"
+            >
+              Sebelumnya
+            </button>
+
+            <button
+              type="button"
+              class="refresh-button"
+              :disabled="isLoadingPositions || positionsPage >= positionsTotalPages"
+              @click="goToNextPositionsPage"
+            >
+              Berikutnya
+            </button>
+          </div>
+        </div>
       </template>
     </section>
 
@@ -615,6 +795,74 @@ h1 {
   color: #8a5a00;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.positions-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.positions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.positions-table th,
+.positions-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e1e7ef;
+  text-align: left;
+  vertical-align: top;
+}
+
+.positions-table th {
+  background: #f8fafc;
+  color: #526174;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.positions-table td {
+  color: #334155;
+}
+
+.positions-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.instrument-id {
+  min-width: 220px;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.pagination-info {
+  color: #687789;
+  font-size: 13px;
+}
+
+.pagination-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .pagination-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 760px) {

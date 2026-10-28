@@ -3,6 +3,23 @@ export interface PortfolioItem {
   name: string
 }
 
+export interface PortfolioPositionItem {
+  positionId: string
+  instrumentId: string
+  quantity: number
+  costBasis: number
+  averagePrice: number
+}
+
+export interface PortfolioPositionsResponse {
+  portfolioId: string
+  items: PortfolioPositionItem[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
+
 export interface PortfolioListResponse {
   items: PortfolioItem[]
   page: number
@@ -52,6 +69,22 @@ export async function getPortfolios(page = 1, pageSize = 20): Promise<PortfolioL
   }
 
   return (await response.json()) as PortfolioListResponse
+}
+
+export async function getPortfolioPositions(
+  portfolioId: string,
+  page = 1,
+  pageSize = 20,
+): Promise<PortfolioPositionsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/portfolios/${portfolioId}/positions?page=${page}&pageSize=${pageSize}`,
+  )
+
+  if (!response.ok) {
+    throw new Error(`Gagal mengambil posisi portfolio (HTTP ${response.status}).`)
+  }
+
+  return (await response.json()) as PortfolioPositionsResponse
 }
 
 export async function getPortfolioValuation(portfolioId: string): Promise<PortfolioValuation> {
