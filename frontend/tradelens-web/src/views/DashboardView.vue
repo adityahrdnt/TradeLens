@@ -1,43 +1,157 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { getPortfolios, type PortfolioItem } from '@/services/portfolioApi'
+  import { computed, onMounted, ref, watch } from 'vue'
+  import {
+    getPortfolios,
+    getPortfolioValuation,
+    getPortfolioPnl,
+    type PortfolioItem,
+    type PortfolioValuation,
+    type PortfolioPnl,
+  } from '@/services/portfolioApi'
 
-const portfolios = ref<PortfolioItem[]>([])
-const totalCount = ref(0)
-const isLoading = ref(false)
-const errorMessage = ref('')
-const selectedPortfolioId = ref<string | null>(null)
+  const portfolios = ref<PortfolioItem[]>([])
+  const totalCount = ref(0)
+  const isLoading = ref(false)
+  const errorMessage = ref('')
+  const selectedPortfolioId = ref<string | null>(null)
 
-const selectedPortfolio = computed(
-  () =>
-    portfolios.value.find((portfolio) => portfolio.portfolioId === selectedPortfolioId.value) ??
-    null,
-)
+  const valuation = ref<PortfolioValuation | null>(null)
+  const pnl = ref<PortfolioPnl | null>(null)
+  const isLoadingDetails = ref(false)
+  const detailsErrorMessage = ref('')
 
-async function loadPortfolios() {
-  isLoading.value = true
-  errorMessage.value = ''
+  const selectedPortfolio = computed(
+    () =>
+      portfolios.value.find(
+        (portfolio) =>
+          portfolio.portfolioId === selectedPortfolioId.value,
+      ) ?? null,
+  )
 
-  try {
-    const result = await getPortfolios()
-    portfolios.value = result.items
-    totalCount.value = result.totalCount
+  async function loadPortfolioDetails(portfolioId: string) {
+    valuation.value = null
+    pnl.value = null
+    detailsErrorMessage.value = ''
+    isLoadingDetails.value = true
 
-    if (
-      !portfolios.value.some((portfolio) => portfolio.portfolioId === selectedPortfolioId.value)
-    ) {
-      selectedPortfolioId.value = null
+    try {
+      const [valuationResult, pnlResult] = await Promise.all([
+        getPortfolioValuation(portfolioId),
+        getPortfolioPnl(portfolioId),
+      ])
+
+      return { valuationResult, pnlResult, error: null }
+    } catch (error) {
+      return {
+        valuationResult: null,
+        pnlResult: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Terjadi kesalahan saat mengambil valuasi dan P&L.',
+      }
+    } finally {
+      isLoadingDetails.value = false
     }
-  } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Terjadi kesalahan saat mengambil data portfolio.'
-  } finally {
-    isLoading.value = false
   }
-}
 
-onMounted(loadPortfolios)
+  async function reloadPortfolioDetails() {
+    const portfolioId = selectedPortfolioId.value
+    if (!portfolioId) return
+
+    const result = await loadPortfolioDetails(portfolioId)
+
+    if (selectedPortfolioId.value !== portfolioId) return
+
+    if (result.error) {
+      detailsErrorMessage.value = result.error
+      return
+    }
+
+    valuation.value = result.valuationResult
+    pnl.value = result.pnlResult
+  }
+
+  async function loadPortfolios() {
+    isLoading.value = true
+    errorMessage.value = ''
+
+    try {
+      const result = await getPortfolios()
+      portfolios.value = result.items
+      totalCount.value = result.totalCount
+
+      if (
+        !portfolios.value.some(
+          (portfolio) =>
+            portfolio.portfolioId === selectedPortfolioId.value,
+        )
+      ) {
+        selectedPortfolioId.value = null
+      }
+    } catch (error) {
+      errorMessage.value =
+        error instanceof Error
+          ? error.message
+          : 'Terjadi kesalahan saat mengambil data portfolio.'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  watch(selectedPortfolioId, async (portfolioId, _previousId, onCleanup) => {
+    valuation.value = null
+    pnl.value = null
+    detailsErrorMessage.value = ''
+
+    if (!portfolioId) {
+      isLoadingDetails.value = false
+      return
+    }
+
+    let requestIsCurrent = true
+    onCleanup(() => {
+      requestIsCurrent = false
+    })
+
+    const result = await loadPortfolioDetails(portfolioId)
+
+    if (!requestIsCurrent) return
+
+    if (result.error) {
+      detailsErrorMessage.value = result.error
+      return
+    }
+
+    valuation.value = result.valuationResult
+    pnl.value = result.pnlResult
+  })
+
+  function formatCurrency(value: number | null | undefined): string {
+    if (value == null) {
+      return 'Belum tersedia'
+    }
+
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      maximumFractionDigits: 2,
+    }).format(value)
+  }
+
+  function formatPercentage(value: number | null | undefined): string {
+    if (value == null) {
+      return 'Belum tersedia'
+    }
+
+    return `${new Intl.NumberFormat('id-ID', {
+      maximumFractionDigits: 2,
+    }).format(value)}%`
+  }
+
+  onMounted(loadPortfolios)
 </script>
+
 
 <template>
   <main class="dashboard">
@@ -140,6 +254,100 @@ onMounted(loadPortfolios)
         ditambahkan pada tahap berikutnya.
       </p>
     </section>
+
+    <section
+      v-if="selectedPortfolio"
+      class="portfolio-section detail-section"
+      aria-label="Portfolio valuation and profit and loss"
+    >
+      <div class="section-header">
+        <div>
+          <h2>Analisis Portfolio</h2>
+          <p>{{ selectedPortfolio.name }}</p>
+        </div>
+        <span v-if="valuation" class="count-label">
+          Status valuasi: {{ valuation.status }}
+        </span>
+      </div>
+
+      <div v-if="isLoadingDetails" class="state-panel" role="status">
+        Memuat valuasi dan P&amp;L...
+      </div>
+
+      <div v-else-if="detailsErrorMessage" class="state-panel error-panel" role="alert">
+        <strong>Analisis portfolio tidak dapat dimuat</strong>
+        <p>{{ detailsErrorMessage }}</p>
+        <button
+          type="button"
+          class="refresh-button"
+          @click="reloadPortfolioDetails"
+        >
+          Muat ulang analisis
+        </button>
+      </div>
+
+      <template v-else-if="valuation && pnl">
+        <p
+          v-if="valuation.status.toUpperCase() === 'PARTIAL' ||
+            pnl.status.toUpperCase() === 'PARTIAL'"
+          class="partial-notice"
+          role="status"
+        >
+          Data valuasi belum lengkap. Nilai pasar atau P&amp;L yang belum tersedia
+          tidak ditampilkan sebagai nol.
+        </p>
+
+        <div class="summary-grid analysis-grid">
+          <article class="summary-card">
+            <span class="card-label">Total Cost Basis</span>
+            <strong class="card-value">
+              {{ formatCurrency(valuation.totalCostBasis) }}
+            </strong>
+            <span class="card-note">Total biaya perolehan posisi</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="card-label">Total Market Value</span>
+            <strong class="card-value">
+              {{ formatCurrency(valuation.totalMarketValue) }}
+            </strong>
+            <span class="card-note">Nilai pasar berdasarkan harga yang tersedia</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="card-label">Unrealized P&amp;L</span>
+            <strong class="card-value">
+              {{ formatCurrency(valuation.totalUnrealizedPnl) }}
+            </strong>
+            <span class="card-note">
+              {{ formatPercentage(valuation.totalUnrealizedPnlPercentage) }}
+            </span>
+          </article>
+
+          <article class="summary-card">
+            <span class="card-label">Realized P&amp;L</span>
+            <strong class="card-value">
+              {{ formatCurrency(pnl.realizedPnl) }}
+            </strong>
+            <span class="card-note">P&amp;L yang telah direalisasikan</span>
+          </article>
+
+          <article class="summary-card">
+            <span class="card-label">Total P&amp;L</span>
+            <strong class="card-value">
+              {{ formatCurrency(pnl.totalPnl) }}
+            </strong>
+            <span class="card-note">Nilai total dari hasil perhitungan backend</span>
+          </article>
+        </div>
+
+        <p class="card-note">
+          P&amp;L dihitung oleh backend TradeLens. Waktu data P&amp;L:
+          {{ new Date(pnl.asOf).toLocaleString('id-ID') }}
+        </p>
+      </template>
+    </section>
+
   </main>
 </template>
 
@@ -389,6 +597,30 @@ h1 {
   color: #294f78;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.detail-section {
+  margin-top: 24px;
+}
+
+.analysis-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.partial-notice {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff7e6;
+  color: #8a5a00;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
