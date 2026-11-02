@@ -207,6 +207,10 @@ public sealed class JwtAuthenticationTests
                 otherUserId,
                 "Other User Portfolio");
 
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                otherUserId);
+
             dbContext.Portfolios.Add(portfolio);
 
             var transaction = new Transaction(

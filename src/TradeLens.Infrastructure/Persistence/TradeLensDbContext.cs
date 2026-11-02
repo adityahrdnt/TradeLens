@@ -11,6 +11,14 @@ public class TradeLensDbContext : DbContext
     {
     }
 
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<UserActivationToken> UserActivationTokens
+        => Set<UserActivationToken>();
+
+    public DbSet<RoleChangeAudit> RoleChangeAudits
+        => Set<RoleChangeAudit>();
+
     public DbSet<Instrument> Instruments => Set<Instrument>();
 
     public DbSet<MarketPrice> MarketPrices { get; set; }

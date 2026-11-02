@@ -28,17 +28,24 @@ public sealed class PortfolioListApiTests
             userId,
             "Trading");
 
-        var otherUserPortfolio = new Portfolio(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "Another User Portfolio");
-
         await using (var scope =
             factory.Services.CreateAsyncScope())
         {
             var dbContext =
                 scope.ServiceProvider
                     .GetRequiredService<TradeLensDbContext>();
+
+            var otherUserId = Guid.NewGuid();
+
+            await IntegrationTestData.EnsureUsersExistAsync(
+                dbContext,
+                userId,
+                otherUserId);
+
+            var otherUserPortfolio = new Portfolio(
+                Guid.NewGuid(),
+                otherUserId,
+                "Another User Portfolio");
 
             dbContext.Portfolios.AddRange(
                 portfolio1,
@@ -125,6 +132,10 @@ public sealed class PortfolioListApiTests
                 scope.ServiceProvider
                     .GetRequiredService<TradeLensDbContext>();
 
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                userId);
+
             dbContext.Portfolios.AddRange(
                 portfolio1,
                 portfolio2,
@@ -179,10 +190,11 @@ public sealed class PortfolioListApiTests
         await factory.SeedAsync();
 
         var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
 
         var otherUserPortfolio = new Portfolio(
             Guid.NewGuid(),
-            Guid.NewGuid(),
+            otherUserId,
             "Another User Portfolio");
 
         await using (var scope =
@@ -192,8 +204,12 @@ public sealed class PortfolioListApiTests
                 scope.ServiceProvider
                     .GetRequiredService<TradeLensDbContext>();
 
-            dbContext.Portfolios.Add(
-                otherUserPortfolio);
+            await IntegrationTestData.EnsureUsersExistAsync(
+                dbContext,
+                userId,
+                otherUserId);
+
+            dbContext.Portfolios.Add(otherUserPortfolio);
 
             await dbContext.SaveChangesAsync();
         }

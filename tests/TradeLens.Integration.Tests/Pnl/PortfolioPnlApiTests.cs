@@ -246,7 +246,7 @@ public sealed class PortfolioPnlApiTests
             factory,
             instrument,
             staleMarketPrice,
-            position : position);
+            position: position);
 
         var client = factory.CreateClient();
 
@@ -334,6 +334,10 @@ public sealed class PortfolioPnlApiTests
         var dbContext =
             scope.ServiceProvider
                 .GetRequiredService<TradeLensDbContext>();
+
+        await IntegrationTestData.EnsureUserExistsAsync(
+            dbContext,
+            userId);
 
         dbContext.Portfolios.Add(
             new Portfolio(

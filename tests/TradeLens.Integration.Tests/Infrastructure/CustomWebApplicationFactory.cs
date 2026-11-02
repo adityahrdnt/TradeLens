@@ -66,6 +66,10 @@ public sealed class CustomWebApplicationFactory
 
             await dbContext.Database.MigrateAsync();
 
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                TestUserId);
+
             var portfolio = await dbContext.Portfolios
                 .FirstOrDefaultAsync(x => x.Id == TestPortfolioId);
 

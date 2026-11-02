@@ -305,6 +305,10 @@ public sealed class PortfolioTransactionsApiTests
                 ownerUserId,
                 "Unauthorized Portfolio Transactions Test");
 
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                ownerUserId);
+
             dbContext.Portfolios.Add(portfolio);
 
             await dbContext.SaveChangesAsync();

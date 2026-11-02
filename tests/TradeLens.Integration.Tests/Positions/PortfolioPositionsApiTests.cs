@@ -268,6 +268,10 @@ public sealed class PortfolioPositionsApiTests
                 otherUserId,
                 "Another User Portfolio");
 
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                otherUserId);
+
             dbContext.Portfolios.Add(portfolio);
 
             await dbContext.SaveChangesAsync();
