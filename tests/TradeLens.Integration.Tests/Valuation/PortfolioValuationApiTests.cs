@@ -544,7 +544,7 @@ public sealed class PortfolioValuationApiTests
         Assert.Null(stalePosition.MarketValue);
         Assert.Null(stalePosition.UnrealizedPnl);
     }
-    
+
     [Fact]
     public async Task GetValuation_WhenPortfolioDoesNotBelongToCurrentUser_ShouldReturnForbidden()
     {
@@ -566,6 +566,10 @@ public sealed class PortfolioValuationApiTests
                 portfolioId,
                 ownerUserId,
                 "Unauthorized Portfolio Test");
+
+            await IntegrationTestData.EnsureUserExistsAsync(
+                dbContext,
+                ownerUserId);
 
             dbContext.Portfolios.Add(portfolio);
 

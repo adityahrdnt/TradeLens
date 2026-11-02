@@ -22,5 +22,10 @@ public sealed class PortfolioConfiguration
             .IsRequired();
 
         builder.HasIndex(x => x.UserId);
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
